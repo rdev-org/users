@@ -27,6 +27,7 @@ type (
 		URL          string `yaml:"url"`
 		MaxOpenConns int    `yaml:"max_open_conns"`
 		MaxIdleConns int    `yaml:"max_idle_conns"`
+		Debug        bool   `yaml:"debug"`
 	}
 
 	SMTPConfig struct {

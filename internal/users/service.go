@@ -5,6 +5,7 @@ import (
 	"fmt"
 
 	pb "github.com/rdev-org/proto-contracts/pb/user"
+	"github.com/rdev-org/users/internal/jwt"
 	"github.com/rdev-org/users/internal/models"
 	"golang.org/x/crypto/bcrypt"
 	"google.golang.org/grpc/codes"
@@ -37,8 +38,13 @@ func (s *UserService) Login(ctx context.Context, req *pb.UserLoginRequest) (*pb.
 		return nil, status.Error(codes.Unauthenticated, "invalid password")
 	}
 
+	token, err := jwt.GenerateToken(user.ID)
+	if err != nil {
+		return nil, status.Error(codes.Unavailable, fmt.Sprintf("failed to generate token %v", err))
+	}
+
 	resp := &pb.UserLoginResponse{
-		Token:    "dummy-tokens",
+		Token:    token,
 		Username: user.Username,
 	}
 

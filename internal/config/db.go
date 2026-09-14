@@ -22,8 +22,8 @@ func ConnectDB(dbConf DBConfig) *bun.DB {
 	db := bun.NewDB(sqldb, pgdialect.New())
 
 	db.AddQueryHook(bundebug.NewQueryHook(
-		bundebug.WithEnabled(true),
-		bundebug.WithVerbose(true),
+		bundebug.WithEnabled(dbConf.Debug),
+		bundebug.WithVerbose(dbConf.Debug),
 	))
 
 	if err := db.Ping(); err != nil {
