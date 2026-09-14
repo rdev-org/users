@@ -1,22 +1,38 @@
 package users
 
 import (
-	"fmt"
+	"context"
 
 	"github.com/rdev-org/users/internal/models"
+	"github.com/uptrace/bun"
 )
 
 type UserRepository struct {
+	db *bun.DB
 }
 
-func NewUserRepository() *UserRepository {
-	return &UserRepository{}
+func NewUserRepository(db *bun.DB) *UserRepository {
+	return &UserRepository{db: db}
 }
 
-func (r *UserRepository) GetUserByUsername(username string) (*models.User, error) {
-	if username == "testuser" {
-		return &models.User{Username: username}, nil
+func (r *UserRepository) GetUserByUsernameOrEmail(ctx context.Context, identifier string) (*models.User, error) {
+	var user = new(models.User)
+
+	err := r.db.NewSelect().
+		Model(user).
+		Where("username = ?", identifier).
+		WhereOr("email = ?", identifier).
+		Scan(ctx)
+
+	if err != nil {
+		return nil, err
 	}
 
-	return nil, fmt.Errorf("user not found")
+	return user, nil
+}
+
+func (r *UserRepository) RegisterUser(ctx context.Context, user *models.User) error {
+	_, err := r.db.NewInsert().Model(user).Exec(ctx)
+
+	return err
 }

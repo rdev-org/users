@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"github.com/rdev-org/users/internal/users"
+	"github.com/uptrace/bun"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/reflection"
 	"google.golang.org/grpc/status"
@@ -14,10 +15,11 @@ import (
 )
 
 type Container struct {
+	db *bun.DB
 }
 
-func NewContainer() *Container {
-	return &Container{}
+func NewContainer(db *bun.DB) *Container {
+	return &Container{db: db}
 }
 
 func (c *Container) Initialize() *grpc.Server {
@@ -33,7 +35,7 @@ func (c *Container) Initialize() *grpc.Server {
 }
 
 func (c *Container) RegisterUserService(grpcServer *grpc.Server) {
-	userRepo := users.NewUserRepository()
+	userRepo := users.NewUserRepository(c.db)
 	userService := users.NewUserServiceServer(userRepo)
 	pb.RegisterUserServiceServer(grpcServer, userService)
 }

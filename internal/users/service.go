@@ -5,6 +5,8 @@ import (
 	"fmt"
 
 	pb "github.com/rdev-org/proto-contracts/pb/user"
+	"github.com/rdev-org/users/internal/models"
+	"golang.org/x/crypto/bcrypt"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 )
@@ -21,16 +23,52 @@ func NewUserServiceServer(repo *UserRepository) *UserService {
 }
 
 func (s *UserService) Login(ctx context.Context, req *pb.UserLoginRequest) (*pb.UserLoginResponse, error) {
-	fmt.Println("Received login request for user:", req.Username)
-
 	if req.Username == "" {
 		return nil, status.Error(codes.Unauthenticated, "username must not be empty")
 	}
 
-	user, err := s.repo.GetUserByUsername(req.Username)
+	user, err := s.repo.GetUserByUsernameOrEmail(ctx, req.Username)
 	if err != nil {
 		return nil, status.Error(codes.Unauthenticated, err.Error())
 	}
 
-	return &pb.UserLoginResponse{Token: "dummy-tokens", Username: user.Username}, nil
+	err = bcrypt.CompareHashAndPassword([]byte(user.Password), []byte(req.Password))
+	if err != nil {
+		return nil, status.Error(codes.Unauthenticated, "invalid password")
+	}
+
+	resp := &pb.UserLoginResponse{
+		Token:    "dummy-tokens",
+		Username: user.Username,
+	}
+
+	return resp, nil
+}
+
+func (s *UserService) Register(ctx context.Context, req *pb.UserRegisterRequest) (*pb.UserRegisterResponse, error) {
+	passwordHash, err := bcrypt.GenerateFromPassword([]byte(req.PasswordHash), bcrypt.DefaultCost)
+	if err != nil {
+		return nil, fmt.Errorf("failed to encrypt password %w", err)
+	}
+
+	payload := &models.User{
+		Username:   req.Username,
+		Email:      req.Email,
+		Mobile:     req.Mobile,
+		Password:   string(passwordHash),
+		FirstName:  req.FirstName,
+		MiddleName: req.MiddleName,
+		LastName:   req.LastName,
+	}
+
+	if err := s.repo.RegisterUser(ctx, payload); err != nil {
+		return nil, fmt.Errorf("failed to register user %w", err)
+	}
+
+	resp := &pb.UserRegisterResponse{
+		Username: req.GetUsername(),
+		Email:    req.GetEmail(),
+	}
+
+	return resp, nil
 }
