@@ -16,7 +16,7 @@ type UserAddress struct {
 	Uuid      string    `json:"uuid"`
 	CreatedAt time.Time `json:"created_at" bun:"created_at,nullzero,notnull,default:current_timestamp"`
 	UpdatedAt time.Time `json:"updated_at" bun:"updated_at,nullzero,notnull,default:current_timestamp"`
-	DeletedAt time.Time `json:"deleted_at" bun:"deleted_at,nullzero"`
+	DeletedAt time.Time `json:"deleted_at" bun:"deleted_at,soft_delete,nullzero"`
 
 	UserID        string `json:"user_id"`
 	AddressLine1  string `json:"address_line1"`

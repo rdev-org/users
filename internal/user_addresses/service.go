@@ -38,7 +38,6 @@ func (s *UserAddressService) GetAddress(ctx context.Context, req *pb.GetAddressR
 			Country:       addr.Country,
 			IsDefault:     addr.IsDefault,
 			AddressType:   addr.AddressType,
-			Status:        addr.Status,
 			Uuid:          addr.Uuid,
 			CreatedAt:     timestamppb.New(addr.CreatedAt),
 			UpdatedAt:     timestamppb.New(addr.UpdatedAt),
@@ -50,13 +49,11 @@ func (s *UserAddressService) GetAddress(ctx context.Context, req *pb.GetAddressR
 }
 
 func (s *UserAddressService) GetAllAddress(ctx context.Context, req *pb.GetAllAddressRequest) (*pb.GetAllAddressResponse, error) {
-
 	filter := &shared.Filter{
 		UserId:   req.GetUserId(),
 		Page:     int(req.Pagination.GetPage()),
 		PageSize: int(req.Pagination.GetPageSize()),
 		Sort:     req.Filter.GetSort(),
-		Status:   req.Filter.GetStatus(),
 		Search:   req.Filter.GetSearch(),
 	}
 
@@ -83,7 +80,6 @@ func (s *UserAddressService) GetAllAddress(ctx context.Context, req *pb.GetAllAd
 				Country:       addr.Country,
 				IsDefault:     addr.IsDefault,
 				AddressType:   addr.AddressType,
-				Status:        addr.Status,
 				Uuid:          addr.Uuid,
 				CreatedAt:     timestamppb.New(addr.CreatedAt),
 				UpdatedAt:     timestamppb.New(addr.UpdatedAt),
@@ -96,7 +92,6 @@ func (s *UserAddressService) GetAllAddress(ctx context.Context, req *pb.GetAllAd
 }
 
 func (s *UserAddressService) CreateAddress(ctx context.Context, req *pb.CreateAddressRequest) (*pb.CreateAddressResponse, error) {
-
 	addr := req.GetAddress()
 	payload := &models.UserAddress{
 		UserID:        addr.GetUserId(),
@@ -116,7 +111,7 @@ func (s *UserAddressService) CreateAddress(ctx context.Context, req *pb.CreateAd
 	}
 
 	resp := &pb.CreateAddressResponse{
-		Address: req.GetAddress(),
+		Address: addr,
 	}
 
 	resp.Address.Uuid = payload.Uuid
@@ -125,13 +120,55 @@ func (s *UserAddressService) CreateAddress(ctx context.Context, req *pb.CreateAd
 }
 
 func (s *UserAddressService) UpdateAddress(ctx context.Context, req *pb.UpdateAddressRequest) (*pb.UpdateAddressResponse, error) {
-	return nil, nil
+	addr := req.GetAddress()
+	payload := &models.UserAddress{
+		UserID:        addr.GetUserId(),
+		AddressLine1:  addr.GetAddressLine1(),
+		AddressLine2:  addr.GetAddressLine2(),
+		City:          addr.GetCity(),
+		StateProvince: addr.GetStateProvince(),
+		PostalCode:    addr.GetPostalCode(),
+		Country:       addr.GetCountry(),
+		IsDefault:     addr.GetIsDefault(),
+		AddressType:   addr.GetAddressType(),
+	}
+
+	_, err := s.repo.UpdateAddress(ctx, addr.GetUuid(), payload)
+	if err != nil {
+		return nil, status.Error(codes.Internal, err.Error())
+	}
+
+	resp := &pb.UpdateAddressResponse{
+		Address: addr,
+	}
+
+	return resp, nil
 }
 
 func (s *UserAddressService) DeleteAddress(ctx context.Context, req *pb.DeleteAddressRequest) (*pb.DeleteAddressResponse, error) {
-	return nil, nil
+	err := s.repo.DeleteAddress(ctx, req.GetUuid())
+	if err != nil {
+		return nil, status.Error(codes.Internal, err.Error())
+	}
+
+	resp := &pb.DeleteAddressResponse{
+		Success: "user address removed",
+	}
+
+	return resp, nil
 }
 
 func (s *UserAddressService) SetDefaultAddress(ctx context.Context, req *pb.SetDefaultAddressRequest) (*pb.SetDefaultAddressResponse, error) {
-	return nil, nil
+	addr, err := s.repo.SetDefaultAddress(ctx, req.GetUserId(), req.GetUuid())
+	if err != nil {
+		return nil, status.Error(codes.Internal, err.Error())
+	}
+
+	resp := &pb.SetDefaultAddressResponse{
+		Address: &pb.Address{
+			Uuid: addr.Uuid,
+		},
+	}
+
+	return resp, nil
 }

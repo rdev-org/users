@@ -2,6 +2,7 @@ package user_addresses
 
 import (
 	"context"
+	"time"
 
 	"github.com/rdev-org/users/internal/models"
 	"github.com/rdev-org/users/internal/shared"
@@ -49,7 +50,19 @@ func (r *UserAddressRepository) GetAllAddress(ctx context.Context, f *shared.Fil
 		Offset(f.Page).
 		Order(f.Sort)
 
-	// @TODO: Add where here <-
+	if f.Search != "" {
+		search := "%" + f.Search + "%"
+		q.WhereGroup("OR", func(sq *bun.SelectQuery) *bun.SelectQuery {
+			return sq.
+				WhereOr("address_line1 ILIKE ?", search).
+				WhereOr("address_line2 ILIKE ?", search).
+				WhereOr("city ILIKE ?", search).
+				WhereOr("state_province ILIKE ?", search).
+				WhereOr("postal_code ILIKE ?", search).
+				WhereOr("country ILIKE ?", search).
+				WhereOr("address_type ILIKE ?", search)
+		})
+	}
 
 	count, err := q.ScanAndCount(ctx)
 
@@ -61,19 +74,100 @@ func (r *UserAddressRepository) GetAllAddress(ctx context.Context, f *shared.Fil
 }
 
 func (r *UserAddressRepository) CreateAddress(ctx context.Context, req *models.UserAddress) (*models.UserAddress, error) {
-	_, err := r.db.NewInsert().Model(req).Exec(ctx)
+	err := r.db.RunInTx(ctx, nil, func(ctx context.Context, tx bun.Tx) error {
+		var err error
+
+		if req.IsDefault {
+			_, err = tx.NewUpdate().
+				Model((*models.UserAddress)(nil)).
+				Set("is_default = ?", false).
+				Set("updated_at = ?", time.Now()).
+				Where("user_id = ?", req.UserID).
+				WhereAllWithDeleted().
+				Exec(ctx)
+			if err != nil {
+				return err
+			}
+		}
+
+		_, err = tx.NewInsert().Model(req).Exec(ctx)
+		if err != nil {
+			return err
+		}
+
+		return nil
+	})
+
+	if err != nil {
+		return nil, err
+	}
+
+	return req, nil
+}
+
+func (r *UserAddressRepository) UpdateAddress(ctx context.Context, uuid string, req *models.UserAddress) (*models.UserAddress, error) {
+	cols := []string{
+		"address_line1",
+		"address_line2",
+		"city",
+		"state_province",
+		"postal_code",
+		"country",
+		"is_default",
+		"address_type",
+	}
+
+	_, err := r.db.NewUpdate().
+		Model(req).
+		Column(cols...).
+		Set("updated_at = ?", time.Now()).
+		Where("uuid = ?", uuid).
+		Exec(ctx)
 
 	return nil, err
 }
 
-func (r *UserAddressRepository) UpdateAddress(ctx context.Context, uuid string, req *models.UserAddress) (*models.UserAddress, error) {
-	return nil, nil
-}
-
 func (r *UserAddressRepository) DeleteAddress(ctx context.Context, uuid string) error {
-	return nil
+	_, err := r.db.NewDelete().
+		Model((*models.UserAddress)(nil)).
+		Where("uuid = ?", uuid).
+		Exec(ctx)
+
+	return err
 }
 
 func (r *UserAddressRepository) SetDefaultAddress(ctx context.Context, user_id, uuid string) (*models.UserAddress, error) {
-	return nil, nil
+	var updatedAddress models.UserAddress
+
+	err := r.db.RunInTx(ctx, nil, func(ctx context.Context, tx bun.Tx) error {
+		_, err := tx.NewUpdate().
+			Model((*models.UserAddress)(nil)).
+			Set("is_default = ?", false).
+			Set("updated_at = ?", time.Now()).
+			Where("user_id = ?", user_id).
+			WhereAllWithDeleted().
+			Exec(ctx)
+		if err != nil {
+			return err
+		}
+
+		err = tx.NewUpdate().
+			Model(&updatedAddress).
+			Set("is_default = ?", true).
+			Set("updated_at = ?", time.Now()).
+			Where("user_id = ? AND uuid = ?", user_id, uuid).
+			Returning("*").
+			Scan(ctx)
+		if err != nil {
+			return err
+		}
+
+		return nil
+	})
+
+	if err != nil {
+		return nil, err
+	}
+
+	return &updatedAddress, nil
 }
