@@ -14,10 +14,10 @@ import (
 
 type UserService struct {
 	pb.UnimplementedUserServiceServer
-	repo *UserRepository
+	repo IUserRepository
 }
 
-func NewUserServiceServer(repo *UserRepository) *UserService {
+func NewUserServiceServer(repo IUserRepository) *UserService {
 	return &UserService{
 		repo: repo,
 	}

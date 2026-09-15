@@ -7,6 +7,7 @@ CREATE TABLE IF NOT EXISTS users (
     mobile VARCHAR(15) null,
     username VARCHAR(45) NOT NULL UNIQUE,
     password TEXT NOT NULL,
+    is_verified BOOLEAN NOT NULL DEFAULT FALSE,
     status VARCHAR(1) NOT NULL DEFAULT 'A',
     uuid UUID NOT NULL DEFAULT gen_random_uuid(),
     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),

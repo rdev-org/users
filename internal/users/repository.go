@@ -7,6 +7,11 @@ import (
 	"github.com/uptrace/bun"
 )
 
+type IUserRepository interface {
+	GetUserByUsernameOrEmail(ctx context.Context, identifier string) (*models.User, error)
+	RegisterUser(ctx context.Context, user *models.User) error
+}
+
 type UserRepository struct {
 	db *bun.DB
 }

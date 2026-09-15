@@ -5,13 +5,15 @@ import (
 	"log"
 	"time"
 
+	"github.com/rdev-org/users/internal/user_addresses"
 	"github.com/rdev-org/users/internal/users"
 	"github.com/uptrace/bun"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/reflection"
 	"google.golang.org/grpc/status"
 
-	pb "github.com/rdev-org/proto-contracts/pb/user"
+	pbUser "github.com/rdev-org/proto-contracts/pb/user"
+	pbUserAddr "github.com/rdev-org/proto-contracts/pb/user_address"
 )
 
 type Container struct {
@@ -28,6 +30,7 @@ func (c *Container) Initialize() *grpc.Server {
 	)
 
 	c.RegisterUserService(grpcServer)
+	c.RegisterUserAddressService(grpcServer)
 
 	reflection.Register(grpcServer)
 
@@ -35,9 +38,15 @@ func (c *Container) Initialize() *grpc.Server {
 }
 
 func (c *Container) RegisterUserService(grpcServer *grpc.Server) {
-	userRepo := users.NewUserRepository(c.db)
-	userService := users.NewUserServiceServer(userRepo)
-	pb.RegisterUserServiceServer(grpcServer, userService)
+	repo := users.NewUserRepository(c.db)
+	svc := users.NewUserServiceServer(repo)
+	pbUser.RegisterUserServiceServer(grpcServer, svc)
+}
+
+func (c *Container) RegisterUserAddressService(grpcServer *grpc.Server) {
+	repo := user_addresses.NewUserAddressRepository(c.db)
+	svc := user_addresses.NewUserAddressServiceServer(repo)
+	pbUserAddr.RegisterUserAddressServiceServer(grpcServer, svc)
 }
 
 func unaryLogInterceptor(ctx context.Context, req any, info *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (interface{}, error) {
