@@ -5,18 +5,13 @@ import (
 	"time"
 	"uuid"
 
+	"github.com/rdev-org/users/internal/shared"
 	"github.com/uptrace/bun"
 )
 
 type UserAddress struct {
-	bun.BaseModel `bun:"table:user_addresses,alias:ua"`
-
-	ID        int64     `json:"id" bun:"id,pk,autoincrement"`
-	Status    string    `json:"status"`
-	Uuid      string    `json:"uuid"`
-	CreatedAt time.Time `json:"created_at" bun:"created_at,nullzero,notnull,default:current_timestamp"`
-	UpdatedAt time.Time `json:"updated_at" bun:"updated_at,nullzero,notnull,default:current_timestamp"`
-	DeletedAt time.Time `json:"deleted_at" bun:"deleted_at,soft_delete,nullzero"`
+	bun.BaseModel `bun:"table:user_address,alias:ua"`
+	shared.Meta
 
 	UserID        string `json:"user_id"`
 	AddressLine1  string `json:"address_line1"`
@@ -37,6 +32,10 @@ func (u *UserAddress) BeforeAppendModel(ctx context.Context, query bun.Query) er
 		}
 		if u.Uuid == "" {
 			u.Uuid = uuid.New().String()
+		}
+	case *bun.UpdateQuery:
+		if u.UpdatedAt.IsZero() {
+			u.UpdatedAt = time.Now()
 		}
 	}
 	return nil

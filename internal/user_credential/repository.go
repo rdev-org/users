@@ -1,0 +1,68 @@
+package user_credential
+
+import (
+	"context"
+
+	"github.com/rdev-org/users/internal/models"
+	"github.com/uptrace/bun"
+)
+
+type UserCredentialRepository interface {
+	Login(ctx context.Context, identifier string) (*models.UserCredential, error)
+	Register(ctx context.Context, req *RegisterRequest) (string, error)
+	DeleteCredential(ctx context.Context, uuid string) error
+	UpdatePassword(ctx context.Context, req *UpdatePasswordRequest) error
+}
+
+type Repository struct {
+	db *bun.DB
+}
+
+func NewUserCredentialRepository(db *bun.DB) *Repository {
+	return &Repository{
+		db: db,
+	}
+}
+
+func (r *Repository) Login(ctx context.Context, identifier string) (*models.UserCredential, error) {
+	var cred = new(models.UserCredential)
+
+	err := r.db.NewSelect().
+		Model(cred).
+		Where("username = ?", identifier).
+		WhereOr("email = ?", identifier).
+		Where("is_verified = ?", true).
+		Limit(1).
+		Scan(ctx)
+
+	if err != nil {
+		return nil, err
+	}
+
+	return cred, nil
+}
+
+func (r *Repository) Register(ctx context.Context, req *RegisterRequest) (string, error) {
+	user := &models.UserCredential{
+		Email:        req.Email,
+		PasswordHash: req.Password,
+	}
+
+	_, err := r.db.NewInsert().Model(user).Exec(ctx)
+
+	return "", err
+}
+
+func (r *Repository) DeleteCredential(ctx context.Context, uuid string) error {
+	return nil
+}
+
+func (r *Repository) UpdatePassword(ctx context.Context, req *UpdatePasswordRequest) error {
+	_, err := r.db.NewUpdate().
+		Model((*models.UserCredential)(nil)).
+		Set("password_hash = ?", req.Password).
+		Where("uuid = ?", req.Uuid).
+		Exec(ctx)
+
+	return err
+}

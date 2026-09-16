@@ -1,4 +1,4 @@
-package user_addresses
+package user_address
 
 import (
 	"context"
@@ -9,24 +9,26 @@ import (
 	"github.com/uptrace/bun"
 )
 
-type IUserAddressRepository interface {
+type UserAddressRepository interface {
 	GetAddress(ctx context.Context, uuid string) (*models.UserAddress, error)
-	GetAllAddress(ctx context.Context, f *shared.Filter) ([]*models.UserAddress, int, error)
-	CreateAddress(ctx context.Context, req *models.UserAddress) (*models.UserAddress, error)
-	UpdateAddress(ctx context.Context, uuid string, req *models.UserAddress) (*models.UserAddress, error)
+	ListAddress(ctx context.Context, f *shared.Filter) ([]*models.UserAddress, int, error)
+	CreateAddress(ctx context.Context, req *models.UserAddress) error
+	UpdateAddress(ctx context.Context, uuid string, req *models.UserAddress) error
 	DeleteAddress(ctx context.Context, uuid string) error
-	SetDefaultAddress(ctx context.Context, user_id, uuid string) (*models.UserAddress, error)
+	DefaultAddress(ctx context.Context, user_id, uuid string) error
 }
 
-type UserAddressRepository struct {
+type Repository struct {
 	db *bun.DB
 }
 
-func NewUserAddressRepository(db *bun.DB) *UserAddressRepository {
-	return &UserAddressRepository{db: db}
+func NewUserAddressRepository(db *bun.DB) *Repository {
+	return &Repository{
+		db: db,
+	}
 }
 
-func (r *UserAddressRepository) GetAddress(ctx context.Context, uuid string) (*models.UserAddress, error) {
+func (r *Repository) GetAddress(ctx context.Context, uuid string) (*models.UserAddress, error) {
 	var userAddr = new(models.UserAddress)
 
 	err := r.db.NewSelect().
@@ -41,11 +43,11 @@ func (r *UserAddressRepository) GetAddress(ctx context.Context, uuid string) (*m
 	return userAddr, nil
 }
 
-func (r *UserAddressRepository) GetAllAddress(ctx context.Context, f *shared.Filter) ([]*models.UserAddress, int, error) {
-	var userAddr []*models.UserAddress
+func (r *Repository) ListAddress(ctx context.Context, f *shared.Filter) ([]*models.UserAddress, int, error) {
+	var addr []*models.UserAddress
 
 	q := r.db.NewSelect().
-		Model(&userAddr).
+		Model(&addr).
 		Limit(f.PageSize).
 		Offset(f.Page).
 		Order(f.Sort)
@@ -70,10 +72,10 @@ func (r *UserAddressRepository) GetAllAddress(ctx context.Context, f *shared.Fil
 		return nil, 0, err
 	}
 
-	return userAddr, count, nil
+	return addr, count, nil
 }
 
-func (r *UserAddressRepository) CreateAddress(ctx context.Context, req *models.UserAddress) (*models.UserAddress, error) {
+func (r *Repository) CreateAddress(ctx context.Context, req *models.UserAddress) error {
 	err := r.db.RunInTx(ctx, nil, func(ctx context.Context, tx bun.Tx) error {
 		var err error
 
@@ -99,13 +101,13 @@ func (r *UserAddressRepository) CreateAddress(ctx context.Context, req *models.U
 	})
 
 	if err != nil {
-		return nil, err
+		return err
 	}
 
-	return req, nil
+	return nil
 }
 
-func (r *UserAddressRepository) UpdateAddress(ctx context.Context, uuid string, req *models.UserAddress) (*models.UserAddress, error) {
+func (r *Repository) UpdateAddress(ctx context.Context, uuid string, req *models.UserAddress) error {
 	cols := []string{
 		"address_line1",
 		"address_line2",
@@ -124,10 +126,10 @@ func (r *UserAddressRepository) UpdateAddress(ctx context.Context, uuid string, 
 		Where("uuid = ?", uuid).
 		Exec(ctx)
 
-	return nil, err
+	return err
 }
 
-func (r *UserAddressRepository) DeleteAddress(ctx context.Context, uuid string) error {
+func (r *Repository) DeleteAddress(ctx context.Context, uuid string) error {
 	_, err := r.db.NewDelete().
 		Model((*models.UserAddress)(nil)).
 		Where("uuid = ?", uuid).
@@ -136,7 +138,7 @@ func (r *UserAddressRepository) DeleteAddress(ctx context.Context, uuid string) 
 	return err
 }
 
-func (r *UserAddressRepository) SetDefaultAddress(ctx context.Context, user_id, uuid string) (*models.UserAddress, error) {
+func (r *Repository) DefaultAddress(ctx context.Context, user_id, uuid string) error {
 	var updatedAddress models.UserAddress
 
 	err := r.db.RunInTx(ctx, nil, func(ctx context.Context, tx bun.Tx) error {
@@ -166,8 +168,8 @@ func (r *UserAddressRepository) SetDefaultAddress(ctx context.Context, user_id, 
 	})
 
 	if err != nil {
-		return nil, err
+		return err
 	}
 
-	return &updatedAddress, nil
+	return nil
 }

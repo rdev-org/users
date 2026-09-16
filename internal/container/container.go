@@ -5,15 +5,17 @@ import (
 	"log"
 	"time"
 
-	"github.com/rdev-org/users/internal/user_addresses"
-	"github.com/rdev-org/users/internal/users"
+	"github.com/rdev-org/users/internal/user_address"
+	"github.com/rdev-org/users/internal/user_credential"
+	"github.com/rdev-org/users/internal/user_profile"
 	"github.com/uptrace/bun"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/reflection"
 	"google.golang.org/grpc/status"
 
-	pbUser "github.com/rdev-org/proto-contracts/pb/user"
-	pbUserAddr "github.com/rdev-org/proto-contracts/pb/user_address"
+	pbAddress "github.com/rdev-org/proto-contracts/pb/user_address"
+	pbCredential "github.com/rdev-org/proto-contracts/pb/user_credential"
+	pbProfile "github.com/rdev-org/proto-contracts/pb/user_profile"
 )
 
 type Container struct {
@@ -29,7 +31,8 @@ func (c *Container) Initialize() *grpc.Server {
 		grpc.UnaryInterceptor(unaryLogInterceptor),
 	)
 
-	c.RegisterUserService(grpcServer)
+	c.RegisterUserCredentialService(grpcServer)
+	c.RegisterUserProfileService(grpcServer)
 	c.RegisterUserAddressService(grpcServer)
 
 	reflection.Register(grpcServer)
@@ -37,16 +40,22 @@ func (c *Container) Initialize() *grpc.Server {
 	return grpcServer
 }
 
-func (c *Container) RegisterUserService(grpcServer *grpc.Server) {
-	repo := users.NewUserRepository(c.db)
-	svc := users.NewUserServiceServer(repo)
-	pbUser.RegisterUserServiceServer(grpcServer, svc)
+func (c *Container) RegisterUserCredentialService(grpcServer *grpc.Server) {
+	r := user_credential.NewUserCredentialRepository(c.db)
+	s := user_credential.NewUserCredentialService(r)
+	pbCredential.RegisterUserCredentialServiceServer(grpcServer, s)
+}
+
+func (c *Container) RegisterUserProfileService(grpcServer *grpc.Server) {
+	r := user_profile.NewUserProfileRepository(c.db)
+	s := user_profile.NewUserProfileService(r)
+	pbProfile.RegisterUserProfileServiceServer(grpcServer, s)
 }
 
 func (c *Container) RegisterUserAddressService(grpcServer *grpc.Server) {
-	repo := user_addresses.NewUserAddressRepository(c.db)
-	svc := user_addresses.NewUserAddressServiceServer(repo)
-	pbUserAddr.RegisterUserAddressServiceServer(grpcServer, svc)
+	r := user_address.NewUserAddressRepository(c.db)
+	s := user_address.NewUserAddressService(r)
+	pbAddress.RegisterUserAddressServiceServer(grpcServer, s)
 }
 
 func unaryLogInterceptor(ctx context.Context, req any, info *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (interface{}, error) {

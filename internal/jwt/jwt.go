@@ -6,9 +6,10 @@ import (
 
 	"github.com/golang-jwt/jwt/v5"
 	"github.com/rdev-org/users/internal/config"
+	"golang.org/x/crypto/bcrypt"
 )
 
-func GenerateToken(userID int64) (string, error) {
+func GenerateToken(userID string) (string, error) {
 	appConfig, err := config.LoadConfig("config.yaml")
 	if err != nil {
 		log.Fatalf("failed to load config %v", err)
@@ -23,4 +24,14 @@ func GenerateToken(userID int64) (string, error) {
 
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
 	return token.SignedString(jwtKey)
+}
+
+func HashPassword(password string) string {
+	passwordHash, err := bcrypt.GenerateFromPassword([]byte(password), bcrypt.DefaultCost)
+	if err != nil {
+		log.Printf("[HashPassword]: failed to encrypt password: %v", err)
+		return ""
+	}
+
+	return string(passwordHash)
 }
