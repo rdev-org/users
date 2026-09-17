@@ -27,7 +27,7 @@ func NewUserProfileService(r UserProfileRepository) *UserProfileService {
 func (s *UserProfileService) GetProfile(ctx context.Context, req *pb.GetProfileRequest) (*pb.GetProfileResponse, error) {
 	p, err := s.r.GetProfile(ctx, req.GetUuid())
 	if err != nil {
-		log.Printf("service - failed to get profile %v", err)
+		log.Printf("[UserProfile]service - failed to get profile %v", err)
 		return nil, status.Error(codes.Internal, err.Error())
 	}
 
@@ -54,7 +54,7 @@ func (s *UserProfileService) ListProfile(ctx context.Context, req *pb.ListProfil
 
 	profiles, count, err := s.r.ListProfile(ctx, filter)
 	if err != nil {
-		log.Printf("service - failed to list profile %v", err)
+		log.Printf("[UserProfile]service - failed to list profile %v", err)
 		return nil, status.Error(codes.Internal, err.Error())
 	}
 
@@ -103,7 +103,7 @@ func (s *UserProfileService) CreateProfile(ctx context.Context, req *pb.CreatePr
 
 	err := s.r.CreateProfile(ctx, payload)
 	if err != nil {
-		log.Printf("service - failed to create profile %v", err)
+		log.Printf("[UserProfile]service - failed to create profile %v", err)
 		return nil, status.Error(codes.Internal, err.Error())
 	}
 
@@ -131,7 +131,7 @@ func (s *UserProfileService) UpdateProfile(ctx context.Context, req *pb.UpdatePr
 
 	err := s.r.UpdateProfile(ctx, payload)
 	if err != nil {
-		log.Printf("service - failed to update profile %v", err)
+		log.Printf("[UserProfile]service - failed to update profile %v", err)
 		return nil, status.Error(codes.Internal, err.Error())
 	}
 
@@ -147,7 +147,7 @@ func (s *UserProfileService) UpdateProfile(ctx context.Context, req *pb.UpdatePr
 func (s *UserProfileService) DeleteProfile(ctx context.Context, req *pb.DeleteProfileRequest) (*pb.DeleteProfileResponse, error) {
 	err := s.r.DeleteProfile(ctx, req.GetUuid())
 	if err != nil {
-		log.Printf("service - failed to delete profile %v", err)
+		log.Printf("[UserProfile]service - failed to delete profile %v", err)
 		return nil, status.Error(codes.Internal, err.Error())
 	}
 

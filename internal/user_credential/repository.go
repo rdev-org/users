@@ -54,7 +54,12 @@ func (r *Repository) Register(ctx context.Context, req *RegisterRequest) (string
 }
 
 func (r *Repository) DeleteCredential(ctx context.Context, uuid string) error {
-	return nil
+	_, err := r.db.NewDelete().
+		Model((*models.UserCredential)(nil)).
+		Where("uuid = ?", uuid).
+		Exec(ctx)
+
+	return err
 }
 
 func (r *Repository) UpdatePassword(ctx context.Context, req *UpdatePasswordRequest) error {

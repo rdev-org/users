@@ -31,13 +31,13 @@ func (s *UserCredentialService) Login(ctx context.Context, req *pb.LoginRequest)
 
 	err = bcrypt.CompareHashAndPassword([]byte(user.PasswordHash), []byte(req.GetPassword()))
 	if err != nil {
-		log.Printf("service - failed invalid password %v", err)
+		log.Printf("[UserCredential]service - failed invalid password %v", err)
 		return nil, status.Error(codes.Unauthenticated, "invalid password")
 	}
 
 	token, err := jwt.GenerateToken(user.Meta.Uuid)
 	if err != nil {
-		log.Printf("service - failed to generate token %v", err)
+		log.Printf("[UserCredential]service - failed to generate token %v", err)
 		return nil, status.Error(codes.Unavailable, err.Error())
 	}
 
@@ -57,7 +57,7 @@ func (s *UserCredentialService) Register(ctx context.Context, req *pb.RegisterRe
 	}
 
 	if _, err := s.r.Register(ctx, payload); err != nil {
-		log.Printf("service - failed to register %v", err)
+		log.Printf("[UserCredential]service - failed to register %v", err)
 		return nil, status.Error(codes.Internal, err.Error())
 	}
 
@@ -67,7 +67,15 @@ func (s *UserCredentialService) Register(ctx context.Context, req *pb.RegisterRe
 }
 
 func (s *UserCredentialService) DeleteCredential(ctx context.Context, req *pb.DeleteCredentialRequest) (*pb.DeleteCredentialResponse, error) {
-	return nil, nil
+	err := s.r.DeleteCredential(ctx, req.GetUuid())
+	if err != nil {
+		log.Printf("[UserCredential]service - failed to delete profile %v", err)
+		return nil, status.Error(codes.Internal, err.Error())
+	}
+
+	return &pb.DeleteCredentialResponse{
+		Message: "Credential successfully deleted",
+	}, nil
 }
 
 func (s *UserCredentialService) UpdatePassword(ctx context.Context, req *pb.UpdatePasswordRequest) (*pb.UpdatePasswordResponse, error) {
@@ -79,7 +87,7 @@ func (s *UserCredentialService) UpdatePassword(ctx context.Context, req *pb.Upda
 
 	err := s.r.UpdatePassword(ctx, payload)
 	if err != nil {
-		log.Printf("service - failed to update password %v", err)
+		log.Printf("[UserCredential]service - failed to update password %v", err)
 		return nil, status.Error(codes.Unavailable, err.Error())
 	}
 
@@ -99,7 +107,7 @@ func (s *UserCredentialService) ResetPassword(ctx context.Context, req *pb.Reset
 
 	err := s.r.UpdatePassword(ctx, payload)
 	if err != nil {
-		log.Printf("service - failed to reset password %v", err)
+		log.Printf("[UserCredential]service - failed to reset password %v", err)
 		return nil, status.Error(codes.Unavailable, err.Error())
 	}
 
