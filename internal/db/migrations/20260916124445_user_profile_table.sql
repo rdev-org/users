@@ -16,6 +16,9 @@ CREATE TABLE
     avatar VARCHAR(255) NULL
   );
 
+-- Index for fast lookups by user_id (essential for performance)
+CREATE INDEX idx_user_profile_user_id ON user_profile (user_id);
+
 -- Index for fast lookups by UUID
 CREATE INDEX idx_user_profile_uuid ON user_profile (uuid);
 
