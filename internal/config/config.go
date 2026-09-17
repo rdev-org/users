@@ -10,6 +10,7 @@ import (
 type (
 	Config struct {
 		Server       ServerConfig `yaml:"server"`
+		Services     ServicesURL  `yaml:"services_url"`
 		Database     DBConfig     `yaml:"database"`
 		SMTP         SMTPConfig   `yaml:"smtp"`
 		AWS          AWSConfig    `yaml:"aws"`
@@ -39,6 +40,10 @@ type (
 	AWSConfig struct {
 		Region string `yaml:"region"`
 		Bucket string `yaml:"bucket"`
+	}
+
+	ServicesURL struct {
+		Notification string `yaml:"notification_url"`
 	}
 )
 

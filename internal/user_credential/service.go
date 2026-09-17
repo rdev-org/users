@@ -2,31 +2,36 @@ package user_credential
 
 import (
 	"context"
+	"fmt"
 	"log"
 
-	pb "github.com/rdev-org/proto-contracts/pb/user_credential"
 	"github.com/rdev-org/users/internal/constant"
 	"github.com/rdev-org/users/internal/jwt"
 	"golang.org/x/crypto/bcrypt"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
+
+	pbEmail "github.com/rdev-org/proto-contracts/pb/notification_email"
+	pb "github.com/rdev-org/proto-contracts/pb/user_credential"
 )
 
 type UserCredentialService struct {
 	pb.UnimplementedUserCredentialServiceServer
-	r UserCredentialRepository
+	email pbEmail.NotificationEmailServiceClient
+	r     UserCredentialRepository
 }
 
-func NewUserCredentialService(r UserCredentialRepository) *UserCredentialService {
+func NewUserCredentialService(email pbEmail.NotificationEmailServiceClient, r UserCredentialRepository) *UserCredentialService {
 	return &UserCredentialService{
-		r: r,
+		email: email,
+		r:     r,
 	}
 }
 
 func (s *UserCredentialService) Login(ctx context.Context, req *pb.LoginRequest) (*pb.LoginResponse, error) {
 	user, err := s.r.Login(ctx, req.GetUsername())
 	if err != nil {
-		return nil, status.Error(codes.Unauthenticated, "user not foud")
+		return nil, status.Error(codes.Unauthenticated, "user not found")
 	}
 
 	err = bcrypt.CompareHashAndPassword([]byte(user.PasswordHash), []byte(req.GetPassword()))
@@ -88,7 +93,7 @@ func (s *UserCredentialService) UpdatePassword(ctx context.Context, req *pb.Upda
 	err := s.r.UpdatePassword(ctx, payload)
 	if err != nil {
 		log.Printf("[UserCredential]service - failed to update password %v", err)
-		return nil, status.Error(codes.Unavailable, err.Error())
+		return nil, status.Error(codes.Internal, err.Error())
 	}
 
 	return &pb.UpdatePasswordResponse{
@@ -113,5 +118,28 @@ func (s *UserCredentialService) ResetPassword(ctx context.Context, req *pb.Reset
 
 	return &pb.ResetPasswordResponse{
 		Message: constant.PasswordReset,
+	}, nil
+}
+
+func (s *UserCredentialService) ForgetPassword(ctx context.Context, req *pb.ForgetPasswordRequest) (*pb.ForgetPasswordResponse, error) {
+	_, err := s.r.CheckEmail(ctx, req.GetEmail())
+	if err != nil {
+		return nil, status.Error(codes.NotFound, "user not found")
+	}
+
+	grpcResp, err := s.email.ResetPasswordEmail(ctx, &pbEmail.ResetPasswordEmailRequest{
+		Email: &pbEmail.Email{
+			Recipient: req.GetEmail(),
+			Subject:   fmt.Sprintf("Reset Password for %s", req.GetEmail()),
+		},
+	})
+	if err != nil {
+		log.Printf("[UserCredential]service - failed to forget password %v", err)
+		return nil, status.Error(codes.Internal, err.Error())
+	}
+
+	return &pb.ForgetPasswordResponse{
+		Message: grpcResp.GetMessage(),
+		SentAt:  grpcResp.GetSentAt(),
 	}, nil
 }

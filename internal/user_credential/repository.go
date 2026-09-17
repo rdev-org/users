@@ -12,6 +12,7 @@ type UserCredentialRepository interface {
 	Register(ctx context.Context, req *RegisterRequest) (string, error)
 	DeleteCredential(ctx context.Context, uuid string) error
 	UpdatePassword(ctx context.Context, req *UpdatePasswordRequest) error
+	CheckEmail(ctx context.Context, identifier string) (bool, error)
 }
 
 type Repository struct {
@@ -22,6 +23,13 @@ func NewUserCredentialRepository(db *bun.DB) *Repository {
 	return &Repository{
 		db: db,
 	}
+}
+
+func (r *Repository) CheckEmail(ctx context.Context, identifier string) (bool, error) {
+	return r.db.NewSelect().
+		Model((*models.UserCredential)(nil)).
+		Where("email = ?", identifier).
+		Exists(ctx)
 }
 
 func (r *Repository) Login(ctx context.Context, identifier string) (*models.UserCredential, error) {
