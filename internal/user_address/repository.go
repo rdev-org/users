@@ -13,7 +13,7 @@ type UserAddressRepository interface {
 	GetAddress(ctx context.Context, uuid string) (*models.UserAddress, error)
 	ListAddress(ctx context.Context, f *shared.Filter) ([]*models.UserAddress, int, error)
 	CreateAddress(ctx context.Context, req *models.UserAddress) error
-	UpdateAddress(ctx context.Context, uuid string, req *models.UserAddress) error
+	UpdateAddress(ctx context.Context, req *models.UserAddress) error
 	DeleteAddress(ctx context.Context, uuid string) error
 	DefaultAddress(ctx context.Context, user_id, uuid string) error
 }
@@ -107,7 +107,7 @@ func (r *Repository) CreateAddress(ctx context.Context, req *models.UserAddress)
 	return nil
 }
 
-func (r *Repository) UpdateAddress(ctx context.Context, uuid string, req *models.UserAddress) error {
+func (r *Repository) UpdateAddress(ctx context.Context, req *models.UserAddress) error {
 	cols := []string{
 		"address_line1",
 		"address_line2",
@@ -123,7 +123,7 @@ func (r *Repository) UpdateAddress(ctx context.Context, uuid string, req *models
 		Model(req).
 		Column(cols...).
 		Set("updated_at = ?", time.Now()).
-		Where("uuid = ?", uuid).
+		Where("uuid = ?", req.Uuid).
 		Exec(ctx)
 
 	return err

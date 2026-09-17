@@ -90,15 +90,16 @@ func (s *UserProfileService) ListProfile(ctx context.Context, req *pb.ListProfil
 }
 
 func (s *UserProfileService) CreateProfile(ctx context.Context, req *pb.CreateProfileRequest) (*pb.CreateProfileResponse, error) {
+	reqProfile := req.GetProfile()
 	payload := &models.UserProfile{
-		UserID:       req.GetUuid(),
-		FirstName:    req.GetProfile().GetFirstName(),
-		MiddleName:   req.GetProfile().GetMiddleName(),
-		LastName:     req.GetProfile().GetLastName(),
-		MobileNumber: req.GetProfile().GetMobileNumber(),
-		DateOfBirth:  req.GetProfile().GetDateOfBirth(),
-		Gender:       req.GetProfile().GetGender(),
-		Avatar:       req.GetProfile().GetAvatar(),
+		UserID:       reqProfile.GetUserId(),
+		FirstName:    reqProfile.GetFirstName(),
+		MiddleName:   reqProfile.GetMiddleName(),
+		LastName:     reqProfile.GetLastName(),
+		MobileNumber: reqProfile.GetMobileNumber(),
+		DateOfBirth:  reqProfile.GetDateOfBirth(),
+		Gender:       reqProfile.GetGender(),
+		Avatar:       reqProfile.GetAvatar(),
 	}
 
 	err := s.r.CreateProfile(ctx, payload)
@@ -117,16 +118,17 @@ func (s *UserProfileService) CreateProfile(ctx context.Context, req *pb.CreatePr
 }
 
 func (s *UserProfileService) UpdateProfile(ctx context.Context, req *pb.UpdateProfileRequest) (*pb.UpdateProfileResponse, error) {
+	reqProfile := req.GetProfile()
 	payload := &models.UserProfile{
 		Uuid:         req.GetUuid(),
-		UserID:       req.GetProfile().GetUserId(),
-		FirstName:    req.GetProfile().GetFirstName(),
-		MiddleName:   req.GetProfile().GetMiddleName(),
-		LastName:     req.GetProfile().GetLastName(),
-		MobileNumber: req.GetProfile().GetMobileNumber(),
-		DateOfBirth:  req.GetProfile().GetDateOfBirth(),
-		Gender:       req.GetProfile().GetGender(),
-		Avatar:       req.GetProfile().GetAvatar(),
+		UserID:       reqProfile.GetUserId(),
+		FirstName:    reqProfile.GetFirstName(),
+		MiddleName:   reqProfile.GetMiddleName(),
+		LastName:     reqProfile.GetLastName(),
+		MobileNumber: reqProfile.GetMobileNumber(),
+		DateOfBirth:  reqProfile.GetDateOfBirth(),
+		Gender:       reqProfile.GetGender(),
+		Avatar:       reqProfile.GetAvatar(),
 	}
 
 	err := s.r.UpdateProfile(ctx, payload)
