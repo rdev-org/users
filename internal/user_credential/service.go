@@ -55,7 +55,7 @@ func (s *UserCredentialService) Login(ctx context.Context, req *pb.LoginRequest)
 		},
 	})
 	if err != nil {
-		log.Printf("[UserCredential]service - failed to forget password %v", err)
+		log.Printf("[UserCredential]service - failed to send email login %v", err)
 		return nil, status.Error(codes.Internal, err.Error())
 	}
 
