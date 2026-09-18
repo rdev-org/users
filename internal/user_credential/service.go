@@ -46,6 +46,19 @@ func (s *UserCredentialService) Login(ctx context.Context, req *pb.LoginRequest)
 		return nil, status.Error(codes.Unavailable, err.Error())
 	}
 
+	_, err = s.email.SendEmail(ctx, &pbEmail.SendEmailRequest{
+		Module:         "LOGIN_EMAIL",
+		RequestContext: req.RequestContext,
+		Email: &pbEmail.Email{
+			Recipient: user.Email,
+			Subject:   fmt.Sprintf("New sign in from %s", user.Email),
+		},
+	})
+	if err != nil {
+		log.Printf("[UserCredential]service - failed to forget password %v", err)
+		return nil, status.Error(codes.Internal, err.Error())
+	}
+
 	return &pb.LoginResponse{
 		Token:    token,
 		Username: user.Username,
@@ -74,7 +87,7 @@ func (s *UserCredentialService) Register(ctx context.Context, req *pb.RegisterRe
 func (s *UserCredentialService) DeleteCredential(ctx context.Context, req *pb.DeleteCredentialRequest) (*pb.DeleteCredentialResponse, error) {
 	err := s.r.DeleteCredential(ctx, req.GetUuid())
 	if err != nil {
-		log.Printf("[UserCredential]service - failed to delete profile %v", err)
+		log.Printf("[UserCredential]service - failed to delete credential %v", err)
 		return nil, status.Error(codes.Internal, err.Error())
 	}
 
