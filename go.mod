@@ -5,6 +5,7 @@ go 1.27.1
 require (
 	github.com/golang-jwt/jwt/v5 v5.3.1
 	github.com/rdev-org/proto-contracts v1.0.0
+	github.com/rdev-org/helpers v1.0.0
 	github.com/uptrace/bun v1.2.18
 	github.com/uptrace/bun/dialect/pgdialect v1.2.18
 	github.com/uptrace/bun/driver/pgdriver v1.2.18
@@ -36,3 +37,5 @@ require (
 )
 
 replace github.com/rdev-org/proto-contracts => ../../proto-contracts
+
+replace github.com/rdev-org/helpers => ../../helpers
