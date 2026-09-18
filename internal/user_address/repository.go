@@ -117,6 +117,7 @@ func (r *Repository) UpdateAddress(ctx context.Context, req *models.UserAddress)
 		"country",
 		"is_default",
 		"address_type",
+		"updated_at",
 	}
 
 	_, err := r.db.NewUpdate().

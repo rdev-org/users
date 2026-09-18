@@ -85,6 +85,7 @@ func (r *Repository) UpdateProfile(ctx context.Context, req *models.UserProfile)
 		"date_of_birth",
 		"gender",
 		"avatar",
+		"updated_at",
 	}
 
 	_, err := r.db.NewUpdate().
