@@ -80,6 +80,8 @@ func (r *Repository) UpdatePreference(ctx context.Context, req *models.UserPrefe
 		"currency",
 		"email_opt_in",
 		"sms_opt_in",
+		"settings",
+		"updated_at",
 	}
 
 	_, err := r.db.NewUpdate().

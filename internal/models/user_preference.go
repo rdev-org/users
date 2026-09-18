@@ -13,11 +13,12 @@ type UserPreference struct {
 	bun.BaseModel `bun:"table:user_preference,alias:upr"`
 	shared.Meta
 
-	UserID     string `json:"user_id"`
-	Language   string `json:"language"`
-	Currency   string `json:"currency"`
-	EmailOptIn bool   `json:"email_opt_in"`
-	SmsOptIn   bool   `json:"sms_opt_in"`
+	UserID     string            `json:"user_id"`
+	Language   string            `json:"language"`
+	Currency   string            `json:"currency"`
+	EmailOptIn bool              `json:"email_opt_in"`
+	SmsOptIn   bool              `json:"sms_opt_in"`
+	Settings   map[string]string `json:"settings"`
 }
 
 func (u *UserPreference) BeforeAppendModel(ctx context.Context, query bun.Query) error {

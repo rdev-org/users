@@ -2,6 +2,7 @@ package user_preference
 
 import (
 	"context"
+	"fmt"
 	"log"
 
 	pbCommon "github.com/rdev-org/proto-contracts/pb/common"
@@ -10,6 +11,7 @@ import (
 	"github.com/rdev-org/users/internal/shared"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
+	"google.golang.org/protobuf/types/known/structpb"
 	"google.golang.org/protobuf/types/known/timestamppb"
 )
 
@@ -31,12 +33,24 @@ func (s *UserPreferenceService) GetPreference(ctx context.Context, req *pb.GetPr
 		return nil, status.Error(codes.Internal, err.Error())
 	}
 
+	settingsAny := make(map[string]any, len(p.Settings))
+	for k, v := range p.Settings {
+		settingsAny[k] = v
+	}
+
+	settingsStruct, err := structpb.NewStruct(settingsAny)
+	if err != nil {
+		log.Printf("[UserPreference]service - failed to convert settings to structpb: %v", err)
+		return nil, status.Error(codes.Internal, "failed to parse settings")
+	}
+
 	return &pb.GetPreferenceResponse{
 		Preference: &pb.Preference{
 			Language:   p.Language,
 			Currency:   p.Currency,
 			EmailOptIn: p.EmailOptIn,
 			SmsOptIn:   p.SmsOptIn,
+			Settings:   settingsStruct,
 		},
 	}, nil
 }
@@ -64,11 +78,23 @@ func (s *UserPreferenceService) ListPreference(ctx context.Context, req *pb.List
 
 	if len(preferences) > 0 {
 		for _, p := range preferences {
+			settingsAny := make(map[string]any, len(p.Settings))
+			for k, v := range p.Settings {
+				settingsAny[k] = v
+			}
+
+			settingsStruct, err := structpb.NewStruct(settingsAny)
+			if err != nil {
+				log.Printf("[UserPreference]service - failed to convert settings to structpb: %v", err)
+				return nil, status.Error(codes.Internal, "failed to parse settings")
+			}
+
 			resp.Preference = append(resp.Preference, &pb.Preference{
 				Language:   p.Language,
 				Currency:   p.Currency,
 				EmailOptIn: p.EmailOptIn,
 				SmsOptIn:   p.SmsOptIn,
+				Settings:   settingsStruct,
 				Meta: &pbCommon.Metadata{
 					Uuid:      p.Meta.Uuid,
 					Status:    p.Meta.Status,
@@ -85,12 +111,25 @@ func (s *UserPreferenceService) ListPreference(ctx context.Context, req *pb.List
 
 func (s *UserPreferenceService) CreatePreference(ctx context.Context, req *pb.CreatePreferenceRequest) (*pb.CreatePreferenceResponse, error) {
 	reqPreference := req.GetPreference()
+
+	settings := make(map[string]string)
+	if reqSettings := reqPreference.GetSettings(); reqSettings != nil {
+		for k, v := range reqSettings.AsMap() {
+			if strVal, ok := v.(string); ok {
+				settings[k] = strVal
+			} else {
+				settings[k] = fmt.Sprintf("%v", v)
+			}
+		}
+	}
+
 	payload := &models.UserPreference{
 		UserID:     reqPreference.GetUserId(),
 		Language:   reqPreference.GetLanguage(),
 		Currency:   reqPreference.GetCurrency(),
 		EmailOptIn: reqPreference.GetEmailOptIn(),
 		SmsOptIn:   reqPreference.GetSmsOptIn(),
+		Settings:   settings,
 	}
 
 	err := s.r.CreatePreference(ctx, payload)
@@ -110,6 +149,18 @@ func (s *UserPreferenceService) CreatePreference(ctx context.Context, req *pb.Cr
 
 func (s *UserPreferenceService) UpdatePreference(ctx context.Context, req *pb.UpdatePreferenceRequest) (*pb.UpdatePreferenceResponse, error) {
 	reqPreference := req.GetPreference()
+
+	settings := make(map[string]string)
+	if reqSettings := reqPreference.GetSettings(); reqSettings != nil {
+		for k, v := range reqSettings.AsMap() {
+			if strVal, ok := v.(string); ok {
+				settings[k] = strVal
+			} else {
+				settings[k] = fmt.Sprintf("%v", v)
+			}
+		}
+	}
+
 	payload := &models.UserPreference{
 		Uuid:       req.GetUuid(),
 		UserID:     reqPreference.GetUserId(),
@@ -117,6 +168,7 @@ func (s *UserPreferenceService) UpdatePreference(ctx context.Context, req *pb.Up
 		Currency:   reqPreference.GetCurrency(),
 		EmailOptIn: reqPreference.GetEmailOptIn(),
 		SmsOptIn:   reqPreference.GetSmsOptIn(),
+		Settings:   settings,
 	}
 
 	err := s.r.UpdatePreference(ctx, payload)

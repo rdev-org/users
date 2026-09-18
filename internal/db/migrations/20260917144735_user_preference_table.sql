@@ -10,7 +10,8 @@ CREATE TABLE
     language VARCHAR(15),
     currency VARCHAR(15),
     email_opt_in BOOLEAN DEFAULT FALSE,
-    sms_opt_in BOOLEAN DEFAULT FALSE
+    sms_opt_in BOOLEAN DEFAULT FALSE,
+    settings jsonb NULL
   );
 
 -- Index for fast lookups by user_id (essential for performance)
