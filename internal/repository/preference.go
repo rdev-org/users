@@ -1,4 +1,4 @@
-package user_preference
+package repository
 
 import (
 	"context"
@@ -16,17 +16,17 @@ type UserPreferenceRepository interface {
 	DeletePreference(ctx context.Context, uuid string) error
 }
 
-type Repository struct {
+type preferenceRepo struct {
 	db *bun.DB
 }
 
-func NewUserPreferenceRepository(db *bun.DB) *Repository {
-	return &Repository{
+func NewUserPreferenceRepository(db *bun.DB) *preferenceRepo {
+	return &preferenceRepo{
 		db: db,
 	}
 }
 
-func (r *Repository) GetPreference(ctx context.Context, user_id string) (*models.UserPreference, error) {
+func (r *preferenceRepo) GetPreference(ctx context.Context, user_id string) (*models.UserPreference, error) {
 	var preference = new(models.UserPreference)
 
 	err := r.db.NewSelect().
@@ -41,7 +41,7 @@ func (r *Repository) GetPreference(ctx context.Context, user_id string) (*models
 	return preference, nil
 }
 
-func (r *Repository) ListPreference(ctx context.Context, f *shared.Filter) ([]*models.UserPreference, int, error) {
+func (r *preferenceRepo) ListPreference(ctx context.Context, f *shared.Filter) ([]*models.UserPreference, int, error) {
 	var preference []*models.UserPreference
 
 	q := r.db.NewSelect().
@@ -68,13 +68,13 @@ func (r *Repository) ListPreference(ctx context.Context, f *shared.Filter) ([]*m
 	return preference, count, nil
 }
 
-func (r *Repository) CreatePreference(ctx context.Context, req *models.UserPreference) error {
+func (r *preferenceRepo) CreatePreference(ctx context.Context, req *models.UserPreference) error {
 	_, err := r.db.NewInsert().Model(req).Exec(ctx)
 
 	return err
 }
 
-func (r *Repository) UpdatePreference(ctx context.Context, req *models.UserPreference) error {
+func (r *preferenceRepo) UpdatePreference(ctx context.Context, req *models.UserPreference) error {
 	cols := []string{
 		"language",
 		"currency",
@@ -94,7 +94,7 @@ func (r *Repository) UpdatePreference(ctx context.Context, req *models.UserPrefe
 	return err
 }
 
-func (r *Repository) DeletePreference(ctx context.Context, uuid string) error {
+func (r *preferenceRepo) DeletePreference(ctx context.Context, uuid string) error {
 	_, err := r.db.NewDelete().
 		Model((*models.UserPreference)(nil)).
 		Where("uuid = ?", uuid).

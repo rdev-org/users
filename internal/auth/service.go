@@ -1,4 +1,4 @@
-package user_credential
+package auth
 
 import (
 	"context"
@@ -11,17 +11,17 @@ import (
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 
-	pbEmail "github.com/rdev-org/proto-contracts/pb/notification_email"
-	pb "github.com/rdev-org/proto-contracts/pb/user_credential"
+	pb "github.com/rdev-org/proto-contracts/pb/auth"
+	pbEmail "github.com/rdev-org/proto-contracts/pb/notification"
 )
 
 type UserCredentialService struct {
-	pb.UnimplementedUserCredentialServiceServer
-	email pbEmail.NotificationEmailServiceClient
+	pb.UnimplementedAuthenticationServiceServer
+	email pbEmail.NotificationServiceClient
 	r     UserCredentialRepository
 }
 
-func NewUserCredentialService(email pbEmail.NotificationEmailServiceClient, r UserCredentialRepository) *UserCredentialService {
+func NewAuthenticationService(email pbEmail.NotificationServiceClient, r UserCredentialRepository) *UserCredentialService {
 	return &UserCredentialService{
 		email: email,
 		r:     r,

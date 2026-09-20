@@ -1,4 +1,4 @@
-package user_credential
+package auth
 
 import (
 	"context"
@@ -19,7 +19,7 @@ type Repository struct {
 	db *bun.DB
 }
 
-func NewUserCredentialRepository(db *bun.DB) *Repository {
+func NewAuthenticationRepository(db *bun.DB) *Repository {
 	return &Repository{
 		db: db,
 	}

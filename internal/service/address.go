@@ -1,11 +1,11 @@
-package user_address
+package service
 
 import (
 	"context"
 	"log"
 
 	pbCommon "github.com/rdev-org/proto-contracts/pb/common"
-	pb "github.com/rdev-org/proto-contracts/pb/user_address"
+	pb "github.com/rdev-org/proto-contracts/pb/user"
 	"github.com/rdev-org/users/internal/models"
 	"github.com/rdev-org/users/internal/shared"
 	"google.golang.org/grpc/codes"
@@ -13,19 +13,8 @@ import (
 	"google.golang.org/protobuf/types/known/timestamppb"
 )
 
-type UserAddressService struct {
-	pb.UnimplementedUserAddressServiceServer
-	r UserAddressRepository
-}
-
-func NewUserAddressService(r UserAddressRepository) *UserAddressService {
-	return &UserAddressService{
-		r: r,
-	}
-}
-
-func (s *UserAddressService) GetAddress(ctx context.Context, req *pb.GetAddressRequest) (*pb.GetAddressResponse, error) {
-	addr, err := s.r.GetAddress(ctx, req.GetUuid())
+func (s *UserService) GetAddress(ctx context.Context, req *pb.GetAddressRequest) (*pb.GetAddressResponse, error) {
+	addr, err := s.address.GetAddress(ctx, req.GetUuid())
 	if err != nil {
 		log.Printf("[UserAddress]service - failed to get address %v", err)
 		return nil, status.Error(codes.Internal, err.Error())
@@ -45,7 +34,7 @@ func (s *UserAddressService) GetAddress(ctx context.Context, req *pb.GetAddressR
 	}, nil
 }
 
-func (s *UserAddressService) ListAddress(ctx context.Context, req *pb.ListAddressRequest) (*pb.ListAddressResponse, error) {
+func (s *UserService) ListAddress(ctx context.Context, req *pb.ListAddressRequest) (*pb.ListAddressResponse, error) {
 	filter := &shared.Filter{
 		Page:     int(req.Pagination.GetPage()),
 		PageSize: int(req.Pagination.GetPageSize()),
@@ -53,7 +42,7 @@ func (s *UserAddressService) ListAddress(ctx context.Context, req *pb.ListAddres
 		Search:   req.Filter.GetSearch(),
 	}
 
-	addrs, count, err := s.r.ListAddress(ctx, filter)
+	addrs, count, err := s.address.ListAddress(ctx, filter)
 	if err != nil {
 		log.Printf("[UserAddress]service - failed to list address %v", err)
 		return nil, status.Error(codes.Internal, err.Error())
@@ -91,7 +80,7 @@ func (s *UserAddressService) ListAddress(ctx context.Context, req *pb.ListAddres
 	return resp, nil
 }
 
-func (s *UserAddressService) CreateAddress(ctx context.Context, req *pb.CreateAddressRequest) (*pb.CreateAddressResponse, error) {
+func (s *UserService) CreateAddress(ctx context.Context, req *pb.CreateAddressRequest) (*pb.CreateAddressResponse, error) {
 	reqAddr := req.GetAddress()
 	payload := &models.UserAddress{
 		UserID:        reqAddr.GetUserId(),
@@ -105,7 +94,7 @@ func (s *UserAddressService) CreateAddress(ctx context.Context, req *pb.CreateAd
 		AddressType:   reqAddr.GetAddressType(),
 	}
 
-	err := s.r.CreateAddress(ctx, payload)
+	err := s.address.CreateAddress(ctx, payload)
 	if err != nil {
 		log.Printf("[UserAddress]service - failed to create address %v", err)
 		return nil, status.Error(codes.Internal, err.Error())
@@ -120,7 +109,7 @@ func (s *UserAddressService) CreateAddress(ctx context.Context, req *pb.CreateAd
 	}, nil
 }
 
-func (s *UserAddressService) UpdateAddress(ctx context.Context, req *pb.UpdateAddressRequest) (*pb.UpdateAddressResponse, error) {
+func (s *UserService) UpdateAddress(ctx context.Context, req *pb.UpdateAddressRequest) (*pb.UpdateAddressResponse, error) {
 	reqAddr := req.GetAddress()
 	payload := &models.UserAddress{
 		Uuid:          req.GetUuid(),
@@ -135,7 +124,7 @@ func (s *UserAddressService) UpdateAddress(ctx context.Context, req *pb.UpdateAd
 		AddressType:   reqAddr.GetAddressType(),
 	}
 
-	err := s.r.UpdateAddress(ctx, payload)
+	err := s.address.UpdateAddress(ctx, payload)
 	if err != nil {
 		log.Printf("[UserAddress]service - failed to update address %v", err)
 		return nil, status.Error(codes.Internal, err.Error())
@@ -150,8 +139,8 @@ func (s *UserAddressService) UpdateAddress(ctx context.Context, req *pb.UpdateAd
 	}, nil
 }
 
-func (s *UserAddressService) DeleteAddress(ctx context.Context, req *pb.DeleteAddressRequest) (*pb.DeleteAddressResponse, error) {
-	err := s.r.DeleteAddress(ctx, req.GetUuid())
+func (s *UserService) DeleteAddress(ctx context.Context, req *pb.DeleteAddressRequest) (*pb.DeleteAddressResponse, error) {
+	err := s.address.DeleteAddress(ctx, req.GetUuid())
 	if err != nil {
 		log.Printf("[UserAddress]service - failed to delete address %v", err)
 		return nil, status.Error(codes.Internal, err.Error())
@@ -162,8 +151,8 @@ func (s *UserAddressService) DeleteAddress(ctx context.Context, req *pb.DeleteAd
 	}, nil
 }
 
-func (s *UserAddressService) DefaultAddress(ctx context.Context, req *pb.DefaultAddressRequest) (*pb.DefaultAddressResponse, error) {
-	err := s.r.DefaultAddress(ctx, req.GetUserId(), req.GetUuid())
+func (s *UserService) DefaultAddress(ctx context.Context, req *pb.DefaultAddressRequest) (*pb.DefaultAddressResponse, error) {
+	err := s.address.DefaultAddress(ctx, req.GetUserId(), req.GetUuid())
 	if err != nil {
 		log.Printf("[UserAddress]service - failed to default address %v", err)
 		return nil, status.Error(codes.Internal, err.Error())

@@ -1,4 +1,4 @@
-package user_profile
+package repository
 
 import (
 	"context"
@@ -16,17 +16,17 @@ type UserProfileRepository interface {
 	DeleteProfile(ctx context.Context, uuid string) error
 }
 
-type Repository struct {
+type profileRepo struct {
 	db *bun.DB
 }
 
-func NewUserProfileRepository(db *bun.DB) *Repository {
-	return &Repository{
+func NewUserProfileRepository(db *bun.DB) *profileRepo {
+	return &profileRepo{
 		db: db,
 	}
 }
 
-func (r *Repository) GetProfile(ctx context.Context, user_id string) (*models.UserProfile, error) {
+func (r *profileRepo) GetProfile(ctx context.Context, user_id string) (*models.UserProfile, error) {
 	var profile = new(models.UserProfile)
 
 	err := r.db.NewSelect().
@@ -41,7 +41,7 @@ func (r *Repository) GetProfile(ctx context.Context, user_id string) (*models.Us
 	return profile, nil
 }
 
-func (r *Repository) ListProfile(ctx context.Context, f *shared.Filter) ([]*models.UserProfile, int, error) {
+func (r *profileRepo) ListProfile(ctx context.Context, f *shared.Filter) ([]*models.UserProfile, int, error) {
 	var profile []*models.UserProfile
 
 	q := r.db.NewSelect().
@@ -70,13 +70,13 @@ func (r *Repository) ListProfile(ctx context.Context, f *shared.Filter) ([]*mode
 	return profile, count, nil
 }
 
-func (r *Repository) CreateProfile(ctx context.Context, req *models.UserProfile) error {
+func (r *profileRepo) CreateProfile(ctx context.Context, req *models.UserProfile) error {
 	_, err := r.db.NewInsert().Model(req).Exec(ctx)
 
 	return err
 }
 
-func (r *Repository) UpdateProfile(ctx context.Context, req *models.UserProfile) error {
+func (r *profileRepo) UpdateProfile(ctx context.Context, req *models.UserProfile) error {
 	cols := []string{
 		"first_name",
 		"middle_name",
@@ -98,7 +98,7 @@ func (r *Repository) UpdateProfile(ctx context.Context, req *models.UserProfile)
 	return err
 }
 
-func (r *Repository) DeleteProfile(ctx context.Context, uuid string) error {
+func (r *profileRepo) DeleteProfile(ctx context.Context, uuid string) error {
 	_, err := r.db.NewDelete().
 		Model((*models.UserProfile)(nil)).
 		Where("uuid = ?", uuid).

@@ -1,11 +1,11 @@
-package user_profile
+package service
 
 import (
 	"context"
 	"log"
 
 	pbCommon "github.com/rdev-org/proto-contracts/pb/common"
-	pb "github.com/rdev-org/proto-contracts/pb/user_profile"
+	pb "github.com/rdev-org/proto-contracts/pb/user"
 	"github.com/rdev-org/users/internal/models"
 	"github.com/rdev-org/users/internal/shared"
 	"google.golang.org/grpc/codes"
@@ -13,19 +13,8 @@ import (
 	"google.golang.org/protobuf/types/known/timestamppb"
 )
 
-type UserProfileService struct {
-	pb.UnimplementedUserProfileServiceServer
-	r UserProfileRepository
-}
-
-func NewUserProfileService(r UserProfileRepository) *UserProfileService {
-	return &UserProfileService{
-		r: r,
-	}
-}
-
-func (s *UserProfileService) GetProfile(ctx context.Context, req *pb.GetProfileRequest) (*pb.GetProfileResponse, error) {
-	p, err := s.r.GetProfile(ctx, req.GetUuid())
+func (s *UserService) GetProfile(ctx context.Context, req *pb.GetProfileRequest) (*pb.GetProfileResponse, error) {
+	p, err := s.profile.GetProfile(ctx, req.GetUuid())
 	if err != nil {
 		log.Printf("[UserProfile]service - failed to get profile %v", err)
 		return nil, status.Error(codes.Internal, err.Error())
@@ -44,7 +33,7 @@ func (s *UserProfileService) GetProfile(ctx context.Context, req *pb.GetProfileR
 	}, nil
 }
 
-func (s *UserProfileService) ListProfile(ctx context.Context, req *pb.ListProfileRequest) (*pb.ListProfileResponse, error) {
+func (s *UserService) ListProfile(ctx context.Context, req *pb.ListProfileRequest) (*pb.ListProfileResponse, error) {
 	filter := &shared.Filter{
 		Page:     int(req.Pagination.GetPage()),
 		PageSize: int(req.Pagination.GetPageSize()),
@@ -52,7 +41,7 @@ func (s *UserProfileService) ListProfile(ctx context.Context, req *pb.ListProfil
 		Search:   req.Filter.GetSearch(),
 	}
 
-	profiles, count, err := s.r.ListProfile(ctx, filter)
+	profiles, count, err := s.profile.ListProfile(ctx, filter)
 	if err != nil {
 		log.Printf("[UserProfile]service - failed to list profile %v", err)
 		return nil, status.Error(codes.Internal, err.Error())
@@ -89,7 +78,7 @@ func (s *UserProfileService) ListProfile(ctx context.Context, req *pb.ListProfil
 	return resp, nil
 }
 
-func (s *UserProfileService) CreateProfile(ctx context.Context, req *pb.CreateProfileRequest) (*pb.CreateProfileResponse, error) {
+func (s *UserService) CreateProfile(ctx context.Context, req *pb.CreateProfileRequest) (*pb.CreateProfileResponse, error) {
 	reqProfile := req.GetProfile()
 	payload := &models.UserProfile{
 		UserID:       reqProfile.GetUserId(),
@@ -102,7 +91,7 @@ func (s *UserProfileService) CreateProfile(ctx context.Context, req *pb.CreatePr
 		Avatar:       reqProfile.GetAvatar(),
 	}
 
-	err := s.r.CreateProfile(ctx, payload)
+	err := s.profile.CreateProfile(ctx, payload)
 	if err != nil {
 		log.Printf("[UserProfile]service - failed to create profile %v", err)
 		return nil, status.Error(codes.Internal, err.Error())
@@ -117,7 +106,7 @@ func (s *UserProfileService) CreateProfile(ctx context.Context, req *pb.CreatePr
 	}, nil
 }
 
-func (s *UserProfileService) UpdateProfile(ctx context.Context, req *pb.UpdateProfileRequest) (*pb.UpdateProfileResponse, error) {
+func (s *UserService) UpdateProfile(ctx context.Context, req *pb.UpdateProfileRequest) (*pb.UpdateProfileResponse, error) {
 	reqProfile := req.GetProfile()
 	payload := &models.UserProfile{
 		Uuid:         req.GetUuid(),
@@ -131,7 +120,7 @@ func (s *UserProfileService) UpdateProfile(ctx context.Context, req *pb.UpdatePr
 		Avatar:       reqProfile.GetAvatar(),
 	}
 
-	err := s.r.UpdateProfile(ctx, payload)
+	err := s.profile.UpdateProfile(ctx, payload)
 	if err != nil {
 		log.Printf("[UserProfile]service - failed to update profile %v", err)
 		return nil, status.Error(codes.Internal, err.Error())
@@ -146,8 +135,8 @@ func (s *UserProfileService) UpdateProfile(ctx context.Context, req *pb.UpdatePr
 	}, nil
 }
 
-func (s *UserProfileService) DeleteProfile(ctx context.Context, req *pb.DeleteProfileRequest) (*pb.DeleteProfileResponse, error) {
-	err := s.r.DeleteProfile(ctx, req.GetUuid())
+func (s *UserService) DeleteProfile(ctx context.Context, req *pb.DeleteProfileRequest) (*pb.DeleteProfileResponse, error) {
+	err := s.profile.DeleteProfile(ctx, req.GetUuid())
 	if err != nil {
 		log.Printf("[UserProfile]service - failed to delete profile %v", err)
 		return nil, status.Error(codes.Internal, err.Error())

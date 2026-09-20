@@ -1,4 +1,4 @@
-package user_preference
+package service
 
 import (
 	"context"
@@ -6,7 +6,7 @@ import (
 
 	"github.com/rdev-org/helpers/structutil"
 	pbCommon "github.com/rdev-org/proto-contracts/pb/common"
-	pb "github.com/rdev-org/proto-contracts/pb/user_preference"
+	pb "github.com/rdev-org/proto-contracts/pb/user"
 	"github.com/rdev-org/users/internal/models"
 	"github.com/rdev-org/users/internal/shared"
 	"google.golang.org/grpc/codes"
@@ -14,19 +14,8 @@ import (
 	"google.golang.org/protobuf/types/known/timestamppb"
 )
 
-type UserPreferenceService struct {
-	pb.UnimplementedUserPreferenceServiceServer
-	r UserPreferenceRepository
-}
-
-func NewUserPreferenceService(r UserPreferenceRepository) *UserPreferenceService {
-	return &UserPreferenceService{
-		r: r,
-	}
-}
-
-func (s *UserPreferenceService) GetPreference(ctx context.Context, req *pb.GetPreferenceRequest) (*pb.GetPreferenceResponse, error) {
-	p, err := s.r.GetPreference(ctx, req.GetUuid())
+func (s *UserService) GetPreference(ctx context.Context, req *pb.GetPreferenceRequest) (*pb.GetPreferenceResponse, error) {
+	p, err := s.preference.GetPreference(ctx, req.GetUuid())
 	if err != nil {
 		log.Printf("[UserPreference]service - failed to get preference %v", err)
 		return nil, status.Error(codes.Internal, err.Error())
@@ -49,7 +38,7 @@ func (s *UserPreferenceService) GetPreference(ctx context.Context, req *pb.GetPr
 	}, nil
 }
 
-func (s *UserPreferenceService) ListPreference(ctx context.Context, req *pb.ListPreferenceRequest) (*pb.ListPreferenceResponse, error) {
+func (s *UserService) ListPreference(ctx context.Context, req *pb.ListPreferenceRequest) (*pb.ListPreferenceResponse, error) {
 	filter := &shared.Filter{
 		Page:     int(req.Pagination.GetPage()),
 		PageSize: int(req.Pagination.GetPageSize()),
@@ -57,7 +46,7 @@ func (s *UserPreferenceService) ListPreference(ctx context.Context, req *pb.List
 		Search:   req.Filter.GetSearch(),
 	}
 
-	preferences, count, err := s.r.ListPreference(ctx, filter)
+	preferences, count, err := s.preference.ListPreference(ctx, filter)
 	if err != nil {
 		log.Printf("[UserPreference]service - failed to list preference %v", err)
 		return nil, status.Error(codes.Internal, err.Error())
@@ -98,7 +87,7 @@ func (s *UserPreferenceService) ListPreference(ctx context.Context, req *pb.List
 	return resp, nil
 }
 
-func (s *UserPreferenceService) CreatePreference(ctx context.Context, req *pb.CreatePreferenceRequest) (*pb.CreatePreferenceResponse, error) {
+func (s *UserService) CreatePreference(ctx context.Context, req *pb.CreatePreferenceRequest) (*pb.CreatePreferenceResponse, error) {
 	reqPreference := req.GetPreference()
 
 	payload := &models.UserPreference{
@@ -110,7 +99,7 @@ func (s *UserPreferenceService) CreatePreference(ctx context.Context, req *pb.Cr
 		Settings:   structutil.ToStringMap(reqPreference.GetSettings()),
 	}
 
-	err := s.r.CreatePreference(ctx, payload)
+	err := s.preference.CreatePreference(ctx, payload)
 	if err != nil {
 		log.Printf("[UserPreference]service - failed to create preference %v", err)
 		return nil, status.Error(codes.Internal, err.Error())
@@ -125,7 +114,7 @@ func (s *UserPreferenceService) CreatePreference(ctx context.Context, req *pb.Cr
 	}, nil
 }
 
-func (s *UserPreferenceService) UpdatePreference(ctx context.Context, req *pb.UpdatePreferenceRequest) (*pb.UpdatePreferenceResponse, error) {
+func (s *UserService) UpdatePreference(ctx context.Context, req *pb.UpdatePreferenceRequest) (*pb.UpdatePreferenceResponse, error) {
 	reqPreference := req.GetPreference()
 
 	payload := &models.UserPreference{
@@ -138,7 +127,7 @@ func (s *UserPreferenceService) UpdatePreference(ctx context.Context, req *pb.Up
 		Settings:   structutil.ToStringMap(reqPreference.GetSettings()),
 	}
 
-	err := s.r.UpdatePreference(ctx, payload)
+	err := s.preference.UpdatePreference(ctx, payload)
 	if err != nil {
 		log.Printf("[UserPreference]service - failed to update preference %v", err)
 		return nil, status.Error(codes.Internal, err.Error())
@@ -153,8 +142,8 @@ func (s *UserPreferenceService) UpdatePreference(ctx context.Context, req *pb.Up
 	}, nil
 }
 
-func (s *UserPreferenceService) DeletePreference(ctx context.Context, req *pb.DeletePreferenceRequest) (*pb.DeletePreferenceResponse, error) {
-	err := s.r.DeletePreference(ctx, req.GetUuid())
+func (s *UserService) DeletePreference(ctx context.Context, req *pb.DeletePreferenceRequest) (*pb.DeletePreferenceResponse, error) {
+	err := s.preference.DeletePreference(ctx, req.GetUuid())
 	if err != nil {
 		log.Printf("[UserPreference]service - failed to delete preference %v", err)
 		return nil, status.Error(codes.Internal, err.Error())
