@@ -57,7 +57,7 @@ func (u *UserProfile) ToProto() (*pb.Profile, error) {
 		DateOfBirth:  u.DateOfBirth,
 		Gender:       u.Gender,
 		Avatar:       u.Avatar,
-		Address:      UserAddressesToProto(u.Addresses),
+		Addresses:    UserAddressesToProto(u.Addresses),
 		Meta:         meta,
 	}
 
