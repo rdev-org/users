@@ -11,7 +11,7 @@ import (
 type UserPreferenceRepository interface {
 	GetPreference(ctx context.Context, user_id string) (*models.UserPreference, error)
 	ListPreference(ctx context.Context, f *shared.Filter) ([]*models.UserPreference, int, error)
-	CreatePreference(ctx context.Context, req *models.UserPreference) error
+	CreatePreference(ctx context.Context, req *models.UserPreference) (string, error)
 	UpdatePreference(ctx context.Context, req *models.UserPreference) error
 	DeletePreference(ctx context.Context, uuid string) error
 }
@@ -68,10 +68,10 @@ func (r *preferenceRepo) ListPreference(ctx context.Context, f *shared.Filter) (
 	return preference, count, nil
 }
 
-func (r *preferenceRepo) CreatePreference(ctx context.Context, req *models.UserPreference) error {
+func (r *preferenceRepo) CreatePreference(ctx context.Context, req *models.UserPreference) (string, error) {
 	_, err := r.db.NewInsert().Model(req).Exec(ctx)
 
-	return err
+	return "", err
 }
 
 func (r *preferenceRepo) UpdatePreference(ctx context.Context, req *models.UserPreference) error {
@@ -81,7 +81,6 @@ func (r *preferenceRepo) UpdatePreference(ctx context.Context, req *models.UserP
 		"email_opt_in",
 		"sms_opt_in",
 		"settings",
-		"updated_at",
 	}
 
 	_, err := r.db.NewUpdate().

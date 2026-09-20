@@ -10,27 +10,17 @@ import (
 	"github.com/rdev-org/users/internal/shared"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
-	"google.golang.org/protobuf/types/known/timestamppb"
 )
 
 func (s *UserService) GetAddress(ctx context.Context, req *pb.GetAddressRequest) (*pb.GetAddressResponse, error) {
-	addr, err := s.address.GetAddress(ctx, req.GetUuid())
+	address, err := s.address.GetAddress(ctx, req.GetUuid())
 	if err != nil {
 		log.Printf("[UserAddress]service - failed to get address %v", err)
 		return nil, status.Error(codes.Internal, err.Error())
 	}
 
 	return &pb.GetAddressResponse{
-		Address: &pb.Address{
-			AddressLine1:  addr.AddressLine1,
-			AddressLine2:  addr.AddressLine2,
-			City:          addr.City,
-			StateProvince: addr.StateProvince,
-			PostalCode:    addr.PostalCode,
-			Country:       addr.Country,
-			IsDefault:     addr.IsDefault,
-			AddressType:   addr.AddressType,
-		},
+		Address: address.ToProto(),
 	}, nil
 }
 
@@ -42,59 +32,30 @@ func (s *UserService) ListAddress(ctx context.Context, req *pb.ListAddressReques
 		Search:   req.Filter.GetSearch(),
 	}
 
-	addrs, count, err := s.address.ListAddress(ctx, filter)
+	addresses, count, err := s.address.ListAddress(ctx, filter)
 	if err != nil {
 		log.Printf("[UserAddress]service - failed to list address %v", err)
 		return nil, status.Error(codes.Internal, err.Error())
 	}
 
-	resp := &pb.ListAddressResponse{
-		Address: []*pb.Address{},
+	protoAddress := models.UserAddressesToProto(addresses)
+
+	return &pb.ListAddressResponse{
+		Address: protoAddress,
 		Pagination: &pbCommon.PaginationResponse{
 			TotalCount: int64(count),
 		},
-	}
-
-	if len(addrs) > 0 {
-		for _, addr := range addrs {
-			resp.Address = append(resp.Address, &pb.Address{
-				AddressLine1:  addr.AddressLine1,
-				AddressLine2:  addr.AddressLine2,
-				City:          addr.City,
-				StateProvince: addr.StateProvince,
-				PostalCode:    addr.PostalCode,
-				Country:       addr.Country,
-				IsDefault:     addr.IsDefault,
-				AddressType:   addr.AddressType,
-				Meta: &pbCommon.Metadata{
-					Uuid:      addr.Meta.Uuid,
-					Status:    addr.Meta.Status,
-					CreatedAt: timestamppb.New(addr.Meta.CreatedAt),
-					UpdatedAt: timestamppb.New(addr.Meta.UpdatedAt),
-					DeletedAt: timestamppb.New(addr.Meta.DeletedAt),
-				},
-			})
-		}
-	}
-
-	return resp, nil
+	}, nil
 }
 
 func (s *UserService) CreateAddress(ctx context.Context, req *pb.CreateAddressRequest) (*pb.CreateAddressResponse, error) {
-	reqAddr := req.GetAddress()
-	payload := &models.UserAddress{
-		UserID:        reqAddr.GetUserId(),
-		AddressLine1:  reqAddr.GetAddressLine1(),
-		AddressLine2:  reqAddr.GetAddressLine2(),
-		City:          reqAddr.GetCity(),
-		StateProvince: reqAddr.GetStateProvince(),
-		PostalCode:    reqAddr.GetPostalCode(),
-		Country:       reqAddr.GetCountry(),
-		IsDefault:     reqAddr.GetIsDefault(),
-		AddressType:   reqAddr.GetAddressType(),
+	payload, err := models.ProtoToCreateUserAddress(req)
+	if err != nil {
+		log.Printf("[UserAddress]service - failed to convert proto to user address %v", err)
+		return nil, status.Error(codes.Internal, err.Error())
 	}
 
-	err := s.address.CreateAddress(ctx, payload)
+	_, err = s.address.CreateAddress(ctx, payload)
 	if err != nil {
 		log.Printf("[UserAddress]service - failed to create address %v", err)
 		return nil, status.Error(codes.Internal, err.Error())
@@ -110,21 +71,13 @@ func (s *UserService) CreateAddress(ctx context.Context, req *pb.CreateAddressRe
 }
 
 func (s *UserService) UpdateAddress(ctx context.Context, req *pb.UpdateAddressRequest) (*pb.UpdateAddressResponse, error) {
-	reqAddr := req.GetAddress()
-	payload := &models.UserAddress{
-		Uuid:          req.GetUuid(),
-		UserID:        reqAddr.GetUserId(),
-		AddressLine1:  reqAddr.GetAddressLine1(),
-		AddressLine2:  reqAddr.GetAddressLine2(),
-		City:          reqAddr.GetCity(),
-		StateProvince: reqAddr.GetStateProvince(),
-		PostalCode:    reqAddr.GetPostalCode(),
-		Country:       reqAddr.GetCountry(),
-		IsDefault:     reqAddr.GetIsDefault(),
-		AddressType:   reqAddr.GetAddressType(),
+	payload, err := models.ProtoToUpdateUserAddress(req)
+	if err != nil {
+		log.Printf("[UserAddress]service - failed to convert proto to user address %v", err)
+		return nil, status.Error(codes.Internal, err.Error())
 	}
 
-	err := s.address.UpdateAddress(ctx, payload)
+	err = s.address.UpdateAddress(ctx, payload)
 	if err != nil {
 		log.Printf("[UserAddress]service - failed to update address %v", err)
 		return nil, status.Error(codes.Internal, err.Error())

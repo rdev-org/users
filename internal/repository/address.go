@@ -12,7 +12,7 @@ import (
 type UserAddressRepository interface {
 	GetAddress(ctx context.Context, uuid string) (*models.UserAddress, error)
 	ListAddress(ctx context.Context, f *shared.Filter) ([]*models.UserAddress, int, error)
-	CreateAddress(ctx context.Context, req *models.UserAddress) error
+	CreateAddress(ctx context.Context, req *models.UserAddress) (string, error)
 	UpdateAddress(ctx context.Context, req *models.UserAddress) error
 	DeleteAddress(ctx context.Context, uuid string) error
 	DefaultAddress(ctx context.Context, user_id, uuid string) error
@@ -75,7 +75,7 @@ func (r *addressRepo) ListAddress(ctx context.Context, f *shared.Filter) ([]*mod
 	return addr, count, nil
 }
 
-func (r *addressRepo) CreateAddress(ctx context.Context, req *models.UserAddress) error {
+func (r *addressRepo) CreateAddress(ctx context.Context, req *models.UserAddress) (string, error) {
 	err := r.db.RunInTx(ctx, nil, func(ctx context.Context, tx bun.Tx) error {
 		var err error
 
@@ -101,10 +101,10 @@ func (r *addressRepo) CreateAddress(ctx context.Context, req *models.UserAddress
 	})
 
 	if err != nil {
-		return err
+		return "", err
 	}
 
-	return nil
+	return "", nil
 }
 
 func (r *addressRepo) UpdateAddress(ctx context.Context, req *models.UserAddress) error {
@@ -117,7 +117,6 @@ func (r *addressRepo) UpdateAddress(ctx context.Context, req *models.UserAddress
 		"country",
 		"is_default",
 		"address_type",
-		"updated_at",
 	}
 
 	_, err := r.db.NewUpdate().

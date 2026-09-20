@@ -77,7 +77,7 @@ func (c *Container) RegisterUserService(grpcServer *grpc.Server) {
 	addressRepo := repository.NewUserAddressRepository(c.db)
 	preferenceRepo := repository.NewUserPreferenceRepository(c.db)
 
-	s := service.NewUserService(profileRepo, addressRepo, preferenceRepo)
+	s := service.NewUserService(c.email, profileRepo, addressRepo, preferenceRepo)
 	pb.RegisterUserServiceServer(grpcServer, s)
 }
 

@@ -2,15 +2,19 @@ package service
 
 import (
 	"context"
+	"fmt"
 	"log"
 
-	pbCommon "github.com/rdev-org/proto-contracts/pb/common"
-	pb "github.com/rdev-org/proto-contracts/pb/user"
-	"github.com/rdev-org/users/internal/models"
-	"github.com/rdev-org/users/internal/shared"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
-	"google.golang.org/protobuf/types/known/timestamppb"
+
+	pbCommon "github.com/rdev-org/proto-contracts/pb/common"
+	pbEmail "github.com/rdev-org/proto-contracts/pb/notification"
+	pb "github.com/rdev-org/proto-contracts/pb/user"
+
+	"github.com/rdev-org/users/internal/constant"
+	"github.com/rdev-org/users/internal/models"
+	"github.com/rdev-org/users/internal/shared"
 )
 
 func (s *UserService) GetProfile(ctx context.Context, req *pb.GetProfileRequest) (*pb.GetProfileResponse, error) {
@@ -20,16 +24,14 @@ func (s *UserService) GetProfile(ctx context.Context, req *pb.GetProfileRequest)
 		return nil, status.Error(codes.Internal, err.Error())
 	}
 
+	profileProto, err := p.ToProto()
+	if err != nil {
+		log.Printf("[UserProfile]service - failed to convert to proto: %v", err)
+		return nil, status.Error(codes.Internal, "failed to parse")
+	}
+
 	return &pb.GetProfileResponse{
-		Profile: &pb.Profile{
-			FirstName:    p.FirstName,
-			MiddleName:   p.MiddleName,
-			LastName:     p.LastName,
-			MobileNumber: p.MobileNumber,
-			DateOfBirth:  p.DateOfBirth,
-			Gender:       p.Gender,
-			Avatar:       p.Avatar,
-		},
+		Profile: profileProto,
 	}, nil
 }
 
@@ -47,80 +49,71 @@ func (s *UserService) ListProfile(ctx context.Context, req *pb.ListProfileReques
 		return nil, status.Error(codes.Internal, err.Error())
 	}
 
-	resp := &pb.ListProfileResponse{
-		Profile: []*pb.Profile{},
+	protoProfile, err := models.UserProfileToProto(profiles)
+	if err != nil {
+		log.Printf("[UserPreference]service - failed to convert profiles to proto: %v", err)
+		return nil, status.Error(codes.Internal, "failed to parse profiles")
+	}
+
+	return &pb.ListProfileResponse{
+		Profile: protoProfile,
 		Pagination: &pbCommon.PaginationResponse{
 			TotalCount: int64(count),
 		},
-	}
-
-	if len(profiles) > 0 {
-		for _, p := range profiles {
-			resp.Profile = append(resp.Profile, &pb.Profile{
-				FirstName:    p.FirstName,
-				MiddleName:   p.MiddleName,
-				LastName:     p.LastName,
-				MobileNumber: p.MobileNumber,
-				DateOfBirth:  p.DateOfBirth,
-				Gender:       p.Gender,
-				Avatar:       p.Avatar,
-				Meta: &pbCommon.Metadata{
-					Uuid:      p.Meta.Uuid,
-					Status:    p.Meta.Status,
-					CreatedAt: timestamppb.New(p.Meta.CreatedAt),
-					UpdatedAt: timestamppb.New(p.Meta.UpdatedAt),
-					DeletedAt: timestamppb.New(p.Meta.DeletedAt),
-				},
-			})
-		}
-	}
-
-	return resp, nil
+	}, nil
 }
 
 func (s *UserService) CreateProfile(ctx context.Context, req *pb.CreateProfileRequest) (*pb.CreateProfileResponse, error) {
-	reqProfile := req.GetProfile()
-	payload := &models.UserProfile{
-		UserID:       reqProfile.GetUserId(),
-		FirstName:    reqProfile.GetFirstName(),
-		MiddleName:   reqProfile.GetMiddleName(),
-		LastName:     reqProfile.GetLastName(),
-		MobileNumber: reqProfile.GetMobileNumber(),
-		DateOfBirth:  reqProfile.GetDateOfBirth(),
-		Gender:       reqProfile.GetGender(),
-		Avatar:       reqProfile.GetAvatar(),
+	payload, err := models.ProtoToCreateUserProfile(req)
+	if err != nil {
+		log.Printf("[UserAddress]service - failed to convert proto to user preference %v", err)
+		return nil, status.Error(codes.Internal, err.Error())
 	}
 
-	err := s.profile.CreateProfile(ctx, payload)
+	uuid, err := s.profile.CreateProfile(ctx, payload)
 	if err != nil {
 		log.Printf("[UserProfile]service - failed to create profile %v", err)
+		return nil, status.Error(codes.Internal, err.Error())
+	}
+
+	name := req.GetPayload().GetFirstName()
+	if req.GetPayload().GetMiddleName() != "" {
+		name += " " + req.GetPayload().GetMiddleName()
+	}
+	name += " " + req.GetPayload().GetLastName()
+
+	_, err = s.email.SendEmail(ctx, &pbEmail.SendEmailRequest{
+		Module:         "REGISTER_EMAIL",
+		RequestContext: req.RequestContext,
+		Email: &pbEmail.Email{
+			Recipient: req.GetPayload().GetEmail(),
+			Name:      name,
+			Subject:   fmt.Sprintf("New sign in from %s", req.GetPayload().GetEmail()),
+			Body:      constant.WelcomeMessage,
+		},
+	})
+	if err != nil {
+		log.Printf("[UserCredential]service - failed to send email login %v", err)
 		return nil, status.Error(codes.Internal, err.Error())
 	}
 
 	return &pb.CreateProfileResponse{
 		Profile: &pb.Profile{
 			Meta: &pbCommon.Metadata{
-				Uuid: payload.Meta.Uuid,
+				Uuid: uuid,
 			},
 		},
 	}, nil
 }
 
 func (s *UserService) UpdateProfile(ctx context.Context, req *pb.UpdateProfileRequest) (*pb.UpdateProfileResponse, error) {
-	reqProfile := req.GetProfile()
-	payload := &models.UserProfile{
-		Uuid:         req.GetUuid(),
-		UserID:       reqProfile.GetUserId(),
-		FirstName:    reqProfile.GetFirstName(),
-		MiddleName:   reqProfile.GetMiddleName(),
-		LastName:     reqProfile.GetLastName(),
-		MobileNumber: reqProfile.GetMobileNumber(),
-		DateOfBirth:  reqProfile.GetDateOfBirth(),
-		Gender:       reqProfile.GetGender(),
-		Avatar:       reqProfile.GetAvatar(),
+	payload, err := models.ProtoToUpdateUserProfile(req)
+	if err != nil {
+		log.Printf("[UserAddress]service - failed to convert proto to user preference %v", err)
+		return nil, status.Error(codes.Internal, err.Error())
 	}
 
-	err := s.profile.UpdateProfile(ctx, payload)
+	err = s.profile.UpdateProfile(ctx, payload)
 	if err != nil {
 		log.Printf("[UserProfile]service - failed to update profile %v", err)
 		return nil, status.Error(codes.Internal, err.Error())

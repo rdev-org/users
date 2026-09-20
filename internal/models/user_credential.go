@@ -16,6 +16,8 @@ type UserCredential struct {
 	Email        string `json:"email"`
 	PasswordHash string `json:"-" bun:"password_hash"`
 	IsVerified   bool   `json:"is_verified"`
+
+	Profile *UserProfile `bun:"rel:has-one,join:uuid=user_id" json:"profile"`
 }
 
 func (u *UserCredential) BeforeAppendModel(ctx context.Context, query bun.Query) error {

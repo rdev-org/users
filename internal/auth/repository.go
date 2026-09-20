@@ -37,6 +37,7 @@ func (r *Repository) Login(ctx context.Context, identifier string) (*models.User
 
 	err := r.db.NewSelect().
 		Model(cred).
+		Relation("Profile").
 		Where("username = ?", identifier).
 		WhereOr("email = ?", identifier).
 		Where("is_verified = ?", true).

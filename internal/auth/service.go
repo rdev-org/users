@@ -46,12 +46,20 @@ func (s *UserCredentialService) Login(ctx context.Context, req *pb.LoginRequest)
 		return nil, status.Error(codes.Unavailable, err.Error())
 	}
 
+	name := user.Profile.FirstName
+	if user.Profile.MiddleName != "" {
+		name += " " + user.Profile.MiddleName
+	}
+	name += " " + user.Profile.LastName
+
 	_, err = s.email.SendEmail(ctx, &pbEmail.SendEmailRequest{
 		Module:         "LOGIN_EMAIL",
 		RequestContext: req.RequestContext,
 		Email: &pbEmail.Email{
 			Recipient: user.Email,
+			Name:      name,
 			Subject:   fmt.Sprintf("New sign in from %s", user.Email),
+			Body:      constant.WelcomeMessage,
 		},
 	})
 	if err != nil {
