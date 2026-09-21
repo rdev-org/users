@@ -8,7 +8,7 @@ import (
 	"github.com/uptrace/bun"
 )
 
-type UserCredential struct {
+type Credential struct {
 	bun.BaseModel `bun:"table:user_credential,alias:u"`
 	shared.Meta
 
@@ -17,10 +17,10 @@ type UserCredential struct {
 	PasswordHash string `json:"-" bun:"password_hash"`
 	IsVerified   bool   `json:"is_verified"`
 
-	Profile *UserProfile `bun:"rel:has-one,join:uuid=user_id" json:"profile"`
+	Profile *Profile `bun:"rel:has-one,join:uuid=user_id" json:"profile"`
 }
 
-func (u *UserCredential) BeforeAppendModel(ctx context.Context, query bun.Query) error {
+func (u *Credential) BeforeAppendModel(ctx context.Context, query bun.Query) error {
 	switch query.(type) {
 	case *bun.InsertQuery:
 		if u.Status == "" {

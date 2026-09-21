@@ -16,7 +16,7 @@ import (
 	"github.com/uptrace/bun"
 )
 
-type UserProfile struct {
+type Profile struct {
 	bun.BaseModel `bun:"table:user_profile,alias:up"`
 	shared.Meta
 
@@ -29,12 +29,12 @@ type UserProfile struct {
 	Gender       string `json:"gender"`
 	Avatar       string `json:"avatar"`
 
-	Addresses  []*UserAddress  `bun:"rel:has-many,join:user_id=user_id" json:"addresses,omitempty"`
-	Preference *UserPreference `bun:"rel:has-one,join:user_id=user_id" json:"preference,omitempty"`
-	User       *UserCredential `bun:"rel:belongs-to,join:user_id=uuid" json:"-"`
+	Addresses  []*Address  `bun:"rel:has-many,join:user_id=user_id" json:"addresses,omitempty"`
+	Preference *Preference `bun:"rel:has-one,join:user_id=user_id" json:"preference,omitempty"`
+	User       *Credential `bun:"rel:belongs-to,join:user_id=uuid" json:"-"`
 }
 
-func (u *UserProfile) ToProto() (*pb.Profile, error) {
+func (u *Profile) ToProto() (*pb.Profile, error) {
 	if u == nil {
 		return nil, nil
 	}
@@ -57,7 +57,7 @@ func (u *UserProfile) ToProto() (*pb.Profile, error) {
 		DateOfBirth:  u.DateOfBirth,
 		Gender:       u.Gender,
 		Avatar:       u.Avatar,
-		Addresses:    UserAddressesToProto(u.Addresses),
+		Addresses:    AddressesToProto(u.Addresses),
 		Meta:         meta,
 	}
 
@@ -79,12 +79,12 @@ func (u *UserProfile) ToProto() (*pb.Profile, error) {
 	return resp, nil
 }
 
-func ProtoToUserProfile(profile *pb.Profile) *UserProfile {
+func ProtoToProfile(profile *pb.Profile) *Profile {
 	if profile == nil {
 		return nil
 	}
 
-	return &UserProfile{
+	return &Profile{
 		UserID:       profile.GetUserId(),
 		FirstName:    profile.GetFirstName(),
 		MiddleName:   profile.GetMiddleName(),
@@ -96,7 +96,7 @@ func ProtoToUserProfile(profile *pb.Profile) *UserProfile {
 	}
 }
 
-func ProtoToCreateUserProfile(proto *pb.CreateProfileRequest) (*dto.ProfileRequestDTO, error) {
+func ProtoToCreateProfile(proto *pb.CreateProfileRequest) (*dto.ProfileRequestDTO, error) {
 	if proto == nil || proto.GetPayload() == nil {
 		return nil, fmt.Errorf("preference data is required")
 	}
@@ -132,12 +132,12 @@ func ProtoToCreateUserProfile(proto *pb.CreateProfileRequest) (*dto.ProfileReque
 	return payload, nil
 }
 
-func ProtoToUpdateUserProfile(proto *pb.UpdateProfileRequest) (*UserProfile, error) {
+func ProtoToUpdateProfile(proto *pb.UpdateProfileRequest) (*Profile, error) {
 	if proto == nil || proto.GetProfile() == nil {
 		return nil, fmt.Errorf("preference data is required")
 	}
 
-	preference := ProtoToUserProfile(proto.GetProfile())
+	preference := ProtoToProfile(proto.GetProfile())
 	if uuidVal := proto.GetUuid(); uuidVal != "" {
 		preference.Uuid = uuidVal
 	}
@@ -145,7 +145,7 @@ func ProtoToUpdateUserProfile(proto *pb.UpdateProfileRequest) (*UserProfile, err
 	return preference, nil
 }
 
-func UserProfileToProto(profiles []*UserProfile) ([]*pb.Profile, error) {
+func ProfileToProto(profiles []*Profile) ([]*pb.Profile, error) {
 	if len(profiles) == 0 {
 		return []*pb.Profile{}, nil
 	}
@@ -162,7 +162,7 @@ func UserProfileToProto(profiles []*UserProfile) ([]*pb.Profile, error) {
 	return protos, nil
 }
 
-func (u *UserProfile) BeforeAppendModel(ctx context.Context, query bun.Query) error {
+func (u *Profile) BeforeAppendModel(ctx context.Context, query bun.Query) error {
 	switch query.(type) {
 	case *bun.InsertQuery:
 		if u.Status == "" {

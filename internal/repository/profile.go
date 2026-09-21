@@ -9,11 +9,12 @@ import (
 	"github.com/uptrace/bun"
 )
 
-type UserProfileRepository interface {
-	GetProfile(ctx context.Context, user_id string) (*models.UserProfile, error)
-	ListProfile(ctx context.Context, f *shared.Filter) ([]*models.UserProfile, int, error)
+type ProfileRepository interface {
+	MyProfile(ctx context.Context, uuid string) (*models.Profile, error)
+	GetProfile(ctx context.Context, uuid string) (*models.Profile, error)
+	ListProfile(ctx context.Context, f *shared.Filter) ([]*models.Profile, int, error)
 	CreateProfile(ctx context.Context, req *dto.ProfileRequestDTO) (string, error)
-	UpdateProfile(ctx context.Context, req *models.UserProfile) error
+	UpdateProfile(ctx context.Context, req *models.Profile) error
 	DeleteProfile(ctx context.Context, uuid string) error
 }
 
@@ -21,20 +22,20 @@ type profileRepo struct {
 	db *bun.DB
 }
 
-func NewUserProfileRepository(db *bun.DB) *profileRepo {
+func NewProfileRepository(db *bun.DB) *profileRepo {
 	return &profileRepo{
 		db: db,
 	}
 }
 
-func (r *profileRepo) GetProfile(ctx context.Context, user_id string) (*models.UserProfile, error) {
-	var profile = new(models.UserProfile)
+func (r *profileRepo) MyProfile(ctx context.Context, uuid string) (*models.Profile, error) {
+	var profile = new(models.Profile)
 
 	err := r.db.NewSelect().
 		Model(profile).
 		Relation("Addresses").
 		Relation("Preference").
-		Where("up.user_id = ?", user_id).
+		Where("up.user_id = ?", uuid).
 		Scan(ctx)
 
 	if err != nil {
@@ -44,8 +45,25 @@ func (r *profileRepo) GetProfile(ctx context.Context, user_id string) (*models.U
 	return profile, nil
 }
 
-func (r *profileRepo) ListProfile(ctx context.Context, f *shared.Filter) ([]*models.UserProfile, int, error) {
-	var profile []*models.UserProfile
+func (r *profileRepo) GetProfile(ctx context.Context, uuid string) (*models.Profile, error) {
+	var profile = new(models.Profile)
+
+	err := r.db.NewSelect().
+		Model(profile).
+		Relation("Addresses").
+		Relation("Preference").
+		Where("up.uuid = ?", uuid).
+		Scan(ctx)
+
+	if err != nil {
+		return nil, err
+	}
+
+	return profile, nil
+}
+
+func (r *profileRepo) ListProfile(ctx context.Context, f *shared.Filter) ([]*models.Profile, int, error) {
+	var profile []*models.Profile
 
 	q := r.db.NewSelect().
 		Model(&profile).
@@ -74,7 +92,7 @@ func (r *profileRepo) ListProfile(ctx context.Context, f *shared.Filter) ([]*mod
 }
 
 func (r *profileRepo) CreateProfile(ctx context.Context, req *dto.ProfileRequestDTO) (string, error) {
-	profile := &models.UserProfile{
+	profile := &models.Profile{
 		UserID:       req.UserID,
 		FirstName:    req.FirstName,
 		MiddleName:   req.MiddleName,
@@ -96,7 +114,7 @@ func (r *profileRepo) CreateProfile(ctx context.Context, req *dto.ProfileRequest
 		}
 
 		if req.Address != nil {
-			address := &models.UserAddress{
+			address := &models.Address{
 				UserID:        req.UserID,
 				AddressLine1:  req.Address.AddressLine1,
 				AddressLine2:  req.Address.AddressLine2,
@@ -126,7 +144,7 @@ func (r *profileRepo) CreateProfile(ctx context.Context, req *dto.ProfileRequest
 	return profile.Meta.Uuid, nil
 }
 
-func (r *profileRepo) UpdateProfile(ctx context.Context, req *models.UserProfile) error {
+func (r *profileRepo) UpdateProfile(ctx context.Context, req *models.Profile) error {
 	cols := []string{
 		"first_name",
 		"middle_name",
@@ -149,7 +167,7 @@ func (r *profileRepo) UpdateProfile(ctx context.Context, req *models.UserProfile
 
 func (r *profileRepo) DeleteProfile(ctx context.Context, uuid string) error {
 	_, err := r.db.NewDelete().
-		Model((*models.UserProfile)(nil)).
+		Model((*models.Profile)(nil)).
 		Where("uuid = ?", uuid).
 		Exec(ctx)
 

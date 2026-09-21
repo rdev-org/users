@@ -39,7 +39,7 @@ func (c *Container) Initialize() *grpc.Server {
 		grpc.UnaryInterceptor(unaryLogInterceptor),
 	)
 
-	c.RegisterUserCredentialService(grpcServer)
+	c.RegisterCredentialService(grpcServer)
 
 	c.RegisterUserService(grpcServer)
 
@@ -73,15 +73,15 @@ func (c *Container) SetNotificationService(url string) error {
 }
 
 func (c *Container) RegisterUserService(grpcServer *grpc.Server) {
-	profileRepo := repository.NewUserProfileRepository(c.db)
-	addressRepo := repository.NewUserAddressRepository(c.db)
-	preferenceRepo := repository.NewUserPreferenceRepository(c.db)
+	profileRepo := repository.NewProfileRepository(c.db)
+	addressRepo := repository.NewAddressRepository(c.db)
+	preferenceRepo := repository.NewPreferenceRepository(c.db)
 
 	s := service.NewUserService(c.notificationClient, profileRepo, addressRepo, preferenceRepo)
 	pb.RegisterUserServiceServer(grpcServer, s)
 }
 
-func (c *Container) RegisterUserCredentialService(grpcServer *grpc.Server) {
+func (c *Container) RegisterCredentialService(grpcServer *grpc.Server) {
 	r := auth.NewAuthenticationRepository(c.db)
 	s := auth.NewAuthenticationService(c.notificationClient, r)
 

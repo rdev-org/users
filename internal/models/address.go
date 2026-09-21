@@ -14,7 +14,7 @@ import (
 	"github.com/uptrace/bun"
 )
 
-type UserAddress struct {
+type Address struct {
 	bun.BaseModel `bun:"table:user_address,alias:ua"`
 	shared.Meta
 
@@ -28,10 +28,10 @@ type UserAddress struct {
 	IsDefault     bool   `json:"is_default"`
 	AddressType   string `json:"address_type"`
 
-	Profile *UserProfile `bun:"rel:belongs-to,join:user_id=user_id" json:"profile"`
+	Profile *Profile `bun:"rel:belongs-to,join:user_id=user_id" json:"profile"`
 }
 
-func (u *UserAddress) ToProto() *pb.Address {
+func (u *Address) ToProto() *pb.Address {
 	if u == nil {
 		return nil
 	}
@@ -59,7 +59,7 @@ func (u *UserAddress) ToProto() *pb.Address {
 	}
 }
 
-func UserAddressesToProto(addresses []*UserAddress) []*pb.Address {
+func AddressesToProto(addresses []*Address) []*pb.Address {
 	if len(addresses) == 0 {
 		return nil
 	}
@@ -72,12 +72,12 @@ func UserAddressesToProto(addresses []*UserAddress) []*pb.Address {
 	return protos
 }
 
-func ProtoToUserAddress(addr *pb.Address) *UserAddress {
+func ProtoToAddress(addr *pb.Address) *Address {
 	if addr == nil {
 		return nil
 	}
 
-	return &UserAddress{
+	return &Address{
 		UserID:        addr.GetUserId(),
 		AddressLine1:  addr.GetAddressLine1(),
 		AddressLine2:  addr.GetAddressLine2(),
@@ -90,20 +90,20 @@ func ProtoToUserAddress(addr *pb.Address) *UserAddress {
 	}
 }
 
-func ProtoToCreateUserAddress(proto *pb.CreateAddressRequest) (*UserAddress, error) {
+func ProtoToCreateAddress(proto *pb.CreateAddressRequest) (*Address, error) {
 	if proto == nil || proto.GetAddress() == nil {
 		return nil, fmt.Errorf("address data is required")
 	}
 
-	return ProtoToUserAddress(proto.GetAddress()), nil
+	return ProtoToAddress(proto.GetAddress()), nil
 }
 
-func ProtoToUpdateUserAddress(proto *pb.UpdateAddressRequest) (*UserAddress, error) {
+func ProtoToUpdateAddress(proto *pb.UpdateAddressRequest) (*Address, error) {
 	if proto == nil || proto.GetAddress() == nil {
 		return nil, fmt.Errorf("address data is required")
 	}
 
-	address := ProtoToUserAddress(proto.GetAddress())
+	address := ProtoToAddress(proto.GetAddress())
 	if uuidVal := proto.GetUuid(); uuidVal != "" {
 		address.Uuid = uuidVal
 	}
@@ -111,7 +111,7 @@ func ProtoToUpdateUserAddress(proto *pb.UpdateAddressRequest) (*UserAddress, err
 	return address, nil
 }
 
-func (u *UserAddress) BeforeAppendModel(ctx context.Context, query bun.Query) error {
+func (u *Address) BeforeAppendModel(ctx context.Context, query bun.Query) error {
 	switch query.(type) {
 	case *bun.InsertQuery:
 		if u.Status == "" {

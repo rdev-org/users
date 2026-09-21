@@ -8,11 +8,11 @@ import (
 	"github.com/uptrace/bun"
 )
 
-type UserPreferenceRepository interface {
-	GetPreference(ctx context.Context, user_id string) (*models.UserPreference, error)
-	ListPreference(ctx context.Context, f *shared.Filter) ([]*models.UserPreference, int, error)
-	CreatePreference(ctx context.Context, req *models.UserPreference) (string, error)
-	UpdatePreference(ctx context.Context, req *models.UserPreference) error
+type PreferenceRepository interface {
+	GetPreference(ctx context.Context, user_id string) (*models.Preference, error)
+	ListPreference(ctx context.Context, f *shared.Filter) ([]*models.Preference, int, error)
+	CreatePreference(ctx context.Context, req *models.Preference) (string, error)
+	UpdatePreference(ctx context.Context, req *models.Preference) error
 	DeletePreference(ctx context.Context, uuid string) error
 }
 
@@ -20,18 +20,18 @@ type preferenceRepo struct {
 	db *bun.DB
 }
 
-func NewUserPreferenceRepository(db *bun.DB) *preferenceRepo {
+func NewPreferenceRepository(db *bun.DB) *preferenceRepo {
 	return &preferenceRepo{
 		db: db,
 	}
 }
 
-func (r *preferenceRepo) GetPreference(ctx context.Context, user_id string) (*models.UserPreference, error) {
-	var preference = new(models.UserPreference)
+func (r *preferenceRepo) GetPreference(ctx context.Context, user_id string) (*models.Preference, error) {
+	var preference = new(models.Preference)
 
 	err := r.db.NewSelect().
 		Model(preference).
-		Where("user_id = ?", user_id).
+		Where("uuid = ?", user_id).
 		Scan(ctx)
 
 	if err != nil {
@@ -41,8 +41,8 @@ func (r *preferenceRepo) GetPreference(ctx context.Context, user_id string) (*mo
 	return preference, nil
 }
 
-func (r *preferenceRepo) ListPreference(ctx context.Context, f *shared.Filter) ([]*models.UserPreference, int, error) {
-	var preference []*models.UserPreference
+func (r *preferenceRepo) ListPreference(ctx context.Context, f *shared.Filter) ([]*models.Preference, int, error) {
+	var preference []*models.Preference
 
 	q := r.db.NewSelect().
 		Model(&preference).
@@ -68,13 +68,13 @@ func (r *preferenceRepo) ListPreference(ctx context.Context, f *shared.Filter) (
 	return preference, count, nil
 }
 
-func (r *preferenceRepo) CreatePreference(ctx context.Context, req *models.UserPreference) (string, error) {
+func (r *preferenceRepo) CreatePreference(ctx context.Context, req *models.Preference) (string, error) {
 	_, err := r.db.NewInsert().Model(req).Exec(ctx)
 
 	return "", err
 }
 
-func (r *preferenceRepo) UpdatePreference(ctx context.Context, req *models.UserPreference) error {
+func (r *preferenceRepo) UpdatePreference(ctx context.Context, req *models.Preference) error {
 	cols := []string{
 		"language",
 		"currency",
@@ -95,7 +95,7 @@ func (r *preferenceRepo) UpdatePreference(ctx context.Context, req *models.UserP
 
 func (r *preferenceRepo) DeletePreference(ctx context.Context, uuid string) error {
 	_, err := r.db.NewDelete().
-		Model((*models.UserPreference)(nil)).
+		Model((*models.Preference)(nil)).
 		Where("uuid = ?", uuid).
 		Exec(ctx)
 

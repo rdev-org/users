@@ -9,16 +9,16 @@ import (
 type UserService struct {
 	pb.UnimplementedUserServiceServer
 	email      pbEmail.NotificationServiceClient
-	profile    repository.UserProfileRepository
-	address    repository.UserAddressRepository
-	preference repository.UserPreferenceRepository
+	profile    repository.ProfileRepository
+	address    repository.AddressRepository
+	preference repository.PreferenceRepository
 }
 
 func NewUserService(
 	email pbEmail.NotificationServiceClient,
-	profile repository.UserProfileRepository,
-	address repository.UserAddressRepository,
-	preference repository.UserPreferenceRepository,
+	profile repository.ProfileRepository,
+	address repository.AddressRepository,
+	preference repository.PreferenceRepository,
 ) *UserService {
 	return &UserService{
 		email:      email,

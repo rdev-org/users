@@ -9,11 +9,11 @@ import (
 	"github.com/uptrace/bun"
 )
 
-type UserAddressRepository interface {
-	GetAddress(ctx context.Context, uuid string) (*models.UserAddress, error)
-	ListAddress(ctx context.Context, f *shared.Filter) ([]*models.UserAddress, int, error)
-	CreateAddress(ctx context.Context, req *models.UserAddress) (string, error)
-	UpdateAddress(ctx context.Context, req *models.UserAddress) error
+type AddressRepository interface {
+	GetAddress(ctx context.Context, uuid string) (*models.Address, error)
+	ListAddress(ctx context.Context, f *shared.Filter) ([]*models.Address, int, error)
+	CreateAddress(ctx context.Context, req *models.Address) (string, error)
+	UpdateAddress(ctx context.Context, req *models.Address) error
 	DeleteAddress(ctx context.Context, uuid string) error
 	DefaultAddress(ctx context.Context, user_id, uuid string) error
 }
@@ -22,14 +22,14 @@ type addressRepo struct {
 	db *bun.DB
 }
 
-func NewUserAddressRepository(db *bun.DB) *addressRepo {
+func NewAddressRepository(db *bun.DB) *addressRepo {
 	return &addressRepo{
 		db: db,
 	}
 }
 
-func (r *addressRepo) GetAddress(ctx context.Context, uuid string) (*models.UserAddress, error) {
-	var userAddr = new(models.UserAddress)
+func (r *addressRepo) GetAddress(ctx context.Context, uuid string) (*models.Address, error) {
+	var userAddr = new(models.Address)
 
 	err := r.db.NewSelect().
 		Model(userAddr).
@@ -43,8 +43,8 @@ func (r *addressRepo) GetAddress(ctx context.Context, uuid string) (*models.User
 	return userAddr, nil
 }
 
-func (r *addressRepo) ListAddress(ctx context.Context, f *shared.Filter) ([]*models.UserAddress, int, error) {
-	var addr []*models.UserAddress
+func (r *addressRepo) ListAddress(ctx context.Context, f *shared.Filter) ([]*models.Address, int, error) {
+	var addr []*models.Address
 
 	q := r.db.NewSelect().
 		Model(&addr).
@@ -75,13 +75,13 @@ func (r *addressRepo) ListAddress(ctx context.Context, f *shared.Filter) ([]*mod
 	return addr, count, nil
 }
 
-func (r *addressRepo) CreateAddress(ctx context.Context, req *models.UserAddress) (string, error) {
+func (r *addressRepo) CreateAddress(ctx context.Context, req *models.Address) (string, error) {
 	err := r.db.RunInTx(ctx, nil, func(ctx context.Context, tx bun.Tx) error {
 		var err error
 
 		if req.IsDefault {
 			_, err = tx.NewUpdate().
-				Model((*models.UserAddress)(nil)).
+				Model((*models.Address)(nil)).
 				Set("is_default = ?", false).
 				Set("updated_at = ?", time.Now()).
 				Where("user_id = ?", req.UserID).
@@ -107,7 +107,7 @@ func (r *addressRepo) CreateAddress(ctx context.Context, req *models.UserAddress
 	return "", nil
 }
 
-func (r *addressRepo) UpdateAddress(ctx context.Context, req *models.UserAddress) error {
+func (r *addressRepo) UpdateAddress(ctx context.Context, req *models.Address) error {
 	cols := []string{
 		"address_line1",
 		"address_line2",
@@ -131,7 +131,7 @@ func (r *addressRepo) UpdateAddress(ctx context.Context, req *models.UserAddress
 
 func (r *addressRepo) DeleteAddress(ctx context.Context, uuid string) error {
 	_, err := r.db.NewDelete().
-		Model((*models.UserAddress)(nil)).
+		Model((*models.Address)(nil)).
 		Where("uuid = ?", uuid).
 		Exec(ctx)
 
@@ -139,11 +139,11 @@ func (r *addressRepo) DeleteAddress(ctx context.Context, uuid string) error {
 }
 
 func (r *addressRepo) DefaultAddress(ctx context.Context, user_id, uuid string) error {
-	var updatedAddress models.UserAddress
+	var updatedAddress models.Address
 
 	err := r.db.RunInTx(ctx, nil, func(ctx context.Context, tx bun.Tx) error {
 		_, err := tx.NewUpdate().
-			Model((*models.UserAddress)(nil)).
+			Model((*models.Address)(nil)).
 			Set("is_default = ?", false).
 			Set("updated_at = ?", time.Now()).
 			Where("user_id = ?", user_id).

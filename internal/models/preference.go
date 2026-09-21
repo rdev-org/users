@@ -16,7 +16,7 @@ import (
 	"github.com/uptrace/bun"
 )
 
-type UserPreference struct {
+type Preference struct {
 	bun.BaseModel `bun:"table:user_preference,alias:upr"`
 	shared.Meta
 
@@ -27,10 +27,10 @@ type UserPreference struct {
 	SmsOptIn   bool              `json:"sms_opt_in"`
 	Settings   map[string]string `json:"settings"`
 
-	Profile *UserProfile `bun:"rel:belongs-to,join:user_id=user_id" json:"profile"`
+	Profile *Profile `bun:"rel:belongs-to,join:user_id=user_id" json:"profile"`
 }
 
-func (u *UserPreference) ToProto() (*pb.Preference, error) {
+func (u *Preference) ToProto() (*pb.Preference, error) {
 	if u == nil {
 		return nil, nil
 	}
@@ -60,12 +60,12 @@ func (u *UserPreference) ToProto() (*pb.Preference, error) {
 	}, nil
 }
 
-func ProtoToUserPreference(preference *pb.Preference) *UserPreference {
+func ProtoToPreference(preference *pb.Preference) *Preference {
 	if preference == nil {
 		return nil
 	}
 
-	return &UserPreference{
+	return &Preference{
 		UserID:     preference.GetUserId(),
 		Language:   preference.GetLanguage(),
 		Currency:   preference.GetCurrency(),
@@ -75,20 +75,20 @@ func ProtoToUserPreference(preference *pb.Preference) *UserPreference {
 	}
 }
 
-func ProtoToCreateUserPreference(proto *pb.CreatePreferenceRequest) (*UserPreference, error) {
+func ProtoToCreatePreference(proto *pb.CreatePreferenceRequest) (*Preference, error) {
 	if proto == nil || proto.GetPreference() == nil {
 		return nil, fmt.Errorf("preference data is required")
 	}
 
-	return ProtoToUserPreference(proto.GetPreference()), nil
+	return ProtoToPreference(proto.GetPreference()), nil
 }
 
-func ProtoToUpdateUserPreference(proto *pb.UpdatePreferenceRequest) (*UserPreference, error) {
+func ProtoToUpdatePreference(proto *pb.UpdatePreferenceRequest) (*Preference, error) {
 	if proto == nil || proto.GetPreference() == nil {
 		return nil, fmt.Errorf("preference data is required")
 	}
 
-	preference := ProtoToUserPreference(proto.GetPreference())
+	preference := ProtoToPreference(proto.GetPreference())
 	if uuidVal := proto.GetUuid(); uuidVal != "" {
 		preference.Uuid = uuidVal
 	}
@@ -96,7 +96,7 @@ func ProtoToUpdateUserPreference(proto *pb.UpdatePreferenceRequest) (*UserPrefer
 	return preference, nil
 }
 
-func UserPreferencesToProto(preferences []*UserPreference) ([]*pb.Preference, error) {
+func PreferencesToProto(preferences []*Preference) ([]*pb.Preference, error) {
 	if len(preferences) == 0 {
 		return []*pb.Preference{}, nil
 	}
@@ -113,7 +113,7 @@ func UserPreferencesToProto(preferences []*UserPreference) ([]*pb.Preference, er
 	return protos, nil
 }
 
-func (u *UserPreference) BeforeAppendModel(ctx context.Context, query bun.Query) error {
+func (u *Preference) BeforeAppendModel(ctx context.Context, query bun.Query) error {
 	switch query.(type) {
 	case *bun.InsertQuery:
 		if u.Status == "" {

@@ -15,20 +15,20 @@ import (
 	pbEmail "github.com/rdev-org/proto-contracts/pb/notification"
 )
 
-type UserCredentialService struct {
+type CredentialService struct {
 	pb.UnimplementedAuthenticationServiceServer
 	email pbEmail.NotificationServiceClient
-	r     UserCredentialRepository
+	r     CredentialRepository
 }
 
-func NewAuthenticationService(email pbEmail.NotificationServiceClient, r UserCredentialRepository) *UserCredentialService {
-	return &UserCredentialService{
+func NewAuthenticationService(email pbEmail.NotificationServiceClient, r CredentialRepository) *CredentialService {
+	return &CredentialService{
 		email: email,
 		r:     r,
 	}
 }
 
-func (s *UserCredentialService) Login(ctx context.Context, req *pb.LoginRequest) (*pb.LoginResponse, error) {
+func (s *CredentialService) Login(ctx context.Context, req *pb.LoginRequest) (*pb.LoginResponse, error) {
 	user, err := s.r.Login(ctx, req.GetUsername())
 	if err != nil {
 		return nil, status.Error(codes.Unauthenticated, "user not found")
@@ -36,13 +36,13 @@ func (s *UserCredentialService) Login(ctx context.Context, req *pb.LoginRequest)
 
 	err = bcrypt.CompareHashAndPassword([]byte(user.PasswordHash), []byte(req.GetPassword()))
 	if err != nil {
-		log.Printf("[UserCredential]service - failed invalid password %v", err)
+		log.Printf("[Credential]service - failed invalid password %v", err)
 		return nil, status.Error(codes.Unauthenticated, "invalid password")
 	}
 
 	token, err := jwt.GenerateToken(user.Meta.Uuid)
 	if err != nil {
-		log.Printf("[UserCredential]service - failed to generate token %v", err)
+		log.Printf("[Credential]service - failed to generate token %v", err)
 		return nil, status.Error(codes.Unavailable, err.Error())
 	}
 
@@ -59,11 +59,10 @@ func (s *UserCredentialService) Login(ctx context.Context, req *pb.LoginRequest)
 			Recipient: user.Email,
 			Name:      name,
 			Subject:   fmt.Sprintf("New sign in from %s", user.Email),
-			Body:      constant.WelcomeMessage,
 		},
 	})
 	if err != nil {
-		log.Printf("[UserCredential]service - failed to send email login %v", err)
+		log.Printf("[Credential]service - failed to send email login %v", err)
 		return nil, status.Error(codes.Internal, err.Error())
 	}
 
@@ -75,7 +74,7 @@ func (s *UserCredentialService) Login(ctx context.Context, req *pb.LoginRequest)
 	}, nil
 }
 
-func (s *UserCredentialService) Register(ctx context.Context, req *pb.RegisterRequest) (*pb.RegisterResponse, error) {
+func (s *CredentialService) Register(ctx context.Context, req *pb.RegisterRequest) (*pb.RegisterResponse, error) {
 	passwordHash := jwt.HashPassword(req.GetPassword())
 	payload := &RegisterRequest{
 		Email:    req.GetEmail(),
@@ -83,7 +82,7 @@ func (s *UserCredentialService) Register(ctx context.Context, req *pb.RegisterRe
 	}
 
 	if _, err := s.r.Register(ctx, payload); err != nil {
-		log.Printf("[UserCredential]service - failed to register %v", err)
+		log.Printf("[Credential]service - failed to register %v", err)
 		return nil, status.Error(codes.Internal, err.Error())
 	}
 
@@ -92,10 +91,10 @@ func (s *UserCredentialService) Register(ctx context.Context, req *pb.RegisterRe
 	}, nil
 }
 
-func (s *UserCredentialService) DeleteCredential(ctx context.Context, req *pb.DeleteCredentialRequest) (*pb.DeleteCredentialResponse, error) {
+func (s *CredentialService) DeleteCredential(ctx context.Context, req *pb.DeleteCredentialRequest) (*pb.DeleteCredentialResponse, error) {
 	err := s.r.DeleteCredential(ctx, req.GetUuid())
 	if err != nil {
-		log.Printf("[UserCredential]service - failed to delete credential %v", err)
+		log.Printf("[Credential]service - failed to delete credential %v", err)
 		return nil, status.Error(codes.Internal, err.Error())
 	}
 
@@ -104,7 +103,7 @@ func (s *UserCredentialService) DeleteCredential(ctx context.Context, req *pb.De
 	}, nil
 }
 
-func (s *UserCredentialService) UpdatePassword(ctx context.Context, req *pb.UpdatePasswordRequest) (*pb.UpdatePasswordResponse, error) {
+func (s *CredentialService) UpdatePassword(ctx context.Context, req *pb.UpdatePasswordRequest) (*pb.UpdatePasswordResponse, error) {
 	passwordHash := jwt.HashPassword(req.GetPassword())
 	payload := &UpdatePasswordRequest{
 		Uuid:     req.GetUuid(),
@@ -113,7 +112,7 @@ func (s *UserCredentialService) UpdatePassword(ctx context.Context, req *pb.Upda
 
 	err := s.r.UpdatePassword(ctx, payload)
 	if err != nil {
-		log.Printf("[UserCredential]service - failed to update password %v", err)
+		log.Printf("[Credential]service - failed to update password %v", err)
 		return nil, status.Error(codes.Internal, err.Error())
 	}
 
@@ -122,7 +121,7 @@ func (s *UserCredentialService) UpdatePassword(ctx context.Context, req *pb.Upda
 	}, nil
 }
 
-func (s *UserCredentialService) ResetPassword(ctx context.Context, req *pb.ResetPasswordRequest) (*pb.ResetPasswordResponse, error) {
+func (s *CredentialService) ResetPassword(ctx context.Context, req *pb.ResetPasswordRequest) (*pb.ResetPasswordResponse, error) {
 	passwordHash := jwt.HashPassword(req.GetPassword())
 	payload := &UpdatePasswordRequest{
 		Uuid:     req.GetUuid(),
@@ -133,7 +132,7 @@ func (s *UserCredentialService) ResetPassword(ctx context.Context, req *pb.Reset
 
 	err := s.r.UpdatePassword(ctx, payload)
 	if err != nil {
-		log.Printf("[UserCredential]service - failed to reset password %v", err)
+		log.Printf("[Credential]service - failed to reset password %v", err)
 		return nil, status.Error(codes.Unavailable, err.Error())
 	}
 
@@ -142,7 +141,7 @@ func (s *UserCredentialService) ResetPassword(ctx context.Context, req *pb.Reset
 	}, nil
 }
 
-func (s *UserCredentialService) ForgetPassword(ctx context.Context, req *pb.ForgetPasswordRequest) (*pb.ForgetPasswordResponse, error) {
+func (s *CredentialService) ForgetPassword(ctx context.Context, req *pb.ForgetPasswordRequest) (*pb.ForgetPasswordResponse, error) {
 	_, err := s.r.CheckEmail(ctx, req.GetEmail())
 	if err != nil {
 		return nil, status.Error(codes.NotFound, "user not found")
@@ -155,7 +154,7 @@ func (s *UserCredentialService) ForgetPassword(ctx context.Context, req *pb.Forg
 		},
 	})
 	if err != nil {
-		log.Printf("[UserCredential]service - failed to forget password %v", err)
+		log.Printf("[Credential]service - failed to forget password %v", err)
 		return nil, status.Error(codes.Internal, err.Error())
 	}
 

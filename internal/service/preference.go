@@ -15,13 +15,13 @@ import (
 func (s *UserService) GetPreference(ctx context.Context, req *pb.GetPreferenceRequest) (*pb.GetPreferenceResponse, error) {
 	p, err := s.preference.GetPreference(ctx, req.GetUuid())
 	if err != nil {
-		log.Printf("[UserPreference]service - failed to get preference %v", err)
+		log.Printf("[Preference]service - failed to get preference %v", err)
 		return nil, status.Error(codes.Internal, err.Error())
 	}
 
 	preferenceProto, err := p.ToProto()
 	if err != nil {
-		log.Printf("[UserPreference]service - failed to convert preferences to proto: %v", err)
+		log.Printf("[Preference]service - failed to convert preferences to proto: %v", err)
 		return nil, status.Error(codes.Internal, "failed to parse preferences")
 	}
 
@@ -40,13 +40,13 @@ func (s *UserService) ListPreference(ctx context.Context, req *pb.ListPreference
 
 	preferences, count, err := s.preference.ListPreference(ctx, filter)
 	if err != nil {
-		log.Printf("[UserPreference]service - failed to list preference %v", err)
+		log.Printf("[Preference]service - failed to list preference %v", err)
 		return nil, status.Error(codes.Internal, err.Error())
 	}
 
-	protoPreferences, err := models.UserPreferencesToProto(preferences)
+	protoPreferences, err := models.PreferencesToProto(preferences)
 	if err != nil {
-		log.Printf("[UserPreference]service - failed to convert preferences to proto: %v", err)
+		log.Printf("[Preference]service - failed to convert preferences to proto: %v", err)
 		return nil, status.Error(codes.Internal, "failed to parse preferences")
 	}
 
@@ -59,15 +59,15 @@ func (s *UserService) ListPreference(ctx context.Context, req *pb.ListPreference
 }
 
 func (s *UserService) CreatePreference(ctx context.Context, req *pb.CreatePreferenceRequest) (*pb.CreatePreferenceResponse, error) {
-	payload, err := models.ProtoToCreateUserPreference(req)
+	payload, err := models.ProtoToCreatePreference(req)
 	if err != nil {
-		log.Printf("[UserAddress]service - failed to convert proto to user preference %v", err)
+		log.Printf("[Address]service - failed to convert proto to user preference %v", err)
 		return nil, status.Error(codes.Internal, err.Error())
 	}
 
 	_, err = s.preference.CreatePreference(ctx, payload)
 	if err != nil {
-		log.Printf("[UserPreference]service - failed to create preference %v", err)
+		log.Printf("[Preference]service - failed to create preference %v", err)
 		return nil, status.Error(codes.Internal, err.Error())
 	}
 
@@ -81,15 +81,15 @@ func (s *UserService) CreatePreference(ctx context.Context, req *pb.CreatePrefer
 }
 
 func (s *UserService) UpdatePreference(ctx context.Context, req *pb.UpdatePreferenceRequest) (*pb.UpdatePreferenceResponse, error) {
-	payload, err := models.ProtoToUpdateUserPreference(req)
+	payload, err := models.ProtoToUpdatePreference(req)
 	if err != nil {
-		log.Printf("[UserAddress]service - failed to convert proto to user preference %v", err)
+		log.Printf("[Address]service - failed to convert proto to user preference %v", err)
 		return nil, status.Error(codes.Internal, err.Error())
 	}
 
 	err = s.preference.UpdatePreference(ctx, payload)
 	if err != nil {
-		log.Printf("[UserPreference]service - failed to update preference %v", err)
+		log.Printf("[Preference]service - failed to update preference %v", err)
 		return nil, status.Error(codes.Internal, err.Error())
 	}
 
@@ -105,7 +105,7 @@ func (s *UserService) UpdatePreference(ctx context.Context, req *pb.UpdatePrefer
 func (s *UserService) DeletePreference(ctx context.Context, req *pb.DeletePreferenceRequest) (*pb.DeletePreferenceResponse, error) {
 	err := s.preference.DeletePreference(ctx, req.GetUuid())
 	if err != nil {
-		log.Printf("[UserPreference]service - failed to delete preference %v", err)
+		log.Printf("[Preference]service - failed to delete preference %v", err)
 		return nil, status.Error(codes.Internal, err.Error())
 	}
 
