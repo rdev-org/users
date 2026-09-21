@@ -15,7 +15,7 @@ type ProfileRepository interface {
 	MyProfile(ctx context.Context, uuid string) (*models.Profile, error)
 	GetProfile(ctx context.Context, uuid string) (*models.Profile, error)
 	ListProfile(ctx context.Context, f *shared.Filter) ([]*models.Profile, int, error)
-	CreateProfile(ctx context.Context, req *dto.ProfileRequestDTO) (string, error)
+	CreateProfile(ctx context.Context, req *dto.ProfileRequestDTO) (string, string, error)
 	UpdateProfile(ctx context.Context, req *models.Profile) error
 	DeleteProfile(ctx context.Context, uuid string) error
 }
@@ -93,7 +93,7 @@ func (r *profileRepo) ListProfile(ctx context.Context, f *shared.Filter) ([]*mod
 	return profile, count, nil
 }
 
-func (r *profileRepo) CreateProfile(ctx context.Context, req *dto.ProfileRequestDTO) (string, error) {
+func (r *profileRepo) CreateProfile(ctx context.Context, req *dto.ProfileRequestDTO) (string, string, error) {
 	var pendingRegistration = new(models.RequestRegistration)
 
 	err := r.db.NewSelect().
@@ -102,7 +102,7 @@ func (r *profileRepo) CreateProfile(ctx context.Context, req *dto.ProfileRequest
 		Where("expires_at > ?", time.Now()).
 		Scan(ctx)
 	if err != nil {
-		return "", err
+		return "", "", err
 	}
 
 	credential := &models.Credential{
@@ -165,10 +165,10 @@ func (r *profileRepo) CreateProfile(ctx context.Context, req *dto.ProfileRequest
 	})
 
 	if err != nil {
-		return "", err
+		return "", "", err
 	}
 
-	return profile.Meta.Uuid, nil
+	return profile.Meta.Uuid, pendingRegistration.Email, nil
 }
 
 func (r *profileRepo) UpdateProfile(ctx context.Context, req *models.Profile) error {

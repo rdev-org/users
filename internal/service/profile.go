@@ -88,7 +88,7 @@ func (s *UserService) CreateProfile(ctx context.Context, req *pb.CreateProfileRe
 		return nil, status.Error(codes.Internal, err.Error())
 	}
 
-	uuid, err := s.profile.CreateProfile(ctx, payload)
+	uuid, email, err := s.profile.CreateProfile(ctx, payload)
 	if err != nil {
 		log.Printf("[Profile]service - failed to create profile %v", err)
 		return nil, status.Error(codes.Internal, err.Error())
@@ -104,9 +104,9 @@ func (s *UserService) CreateProfile(ctx context.Context, req *pb.CreateProfileRe
 		Module:         "WELCOME_EMAIL",
 		RequestContext: req.RequestContext,
 		Email: &pbEmail.Email{
-			Recipient: req.GetPayload().GetEmail(),
+			Recipient: email,
 			Name:      name,
-			Subject:   fmt.Sprintf("Welcome %s!", req.GetPayload().GetEmail()),
+			Subject:   fmt.Sprintf("Welcome %s!", email),
 			Body:      constant.WelcomeMessage,
 		},
 	})
