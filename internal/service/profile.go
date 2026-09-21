@@ -106,7 +106,7 @@ func (s *UserService) CreateProfile(ctx context.Context, req *pb.CreateProfileRe
 		Email: &pbEmail.Email{
 			Recipient: req.GetPayload().GetEmail(),
 			Name:      name,
-			Subject:   fmt.Sprintf("New sign in from %s", req.GetPayload().GetEmail()),
+			Subject:   fmt.Sprintf("Welcome %s!", req.GetPayload().GetEmail()),
 			Body:      constant.WelcomeMessage,
 		},
 	})
