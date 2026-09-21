@@ -10,6 +10,10 @@ type ProfileRequestDTO struct {
 	Gender       string             `json:"gender"`
 	Avatar       string             `json:"avatar"`
 	Address      *AddressRequestDTO `json:"address"`
+
+	Token    string `json:"token"`
+	Username string `json:"username"`
+	Password string `json:"password"`
 }
 
 type AddressRequestDTO struct {

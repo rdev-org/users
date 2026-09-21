@@ -1,6 +1,10 @@
 package jwt
 
 import (
+	"crypto/rand"
+	"crypto/sha256"
+	"crypto/subtle"
+	"encoding/hex"
 	"log"
 	"time"
 
@@ -34,4 +38,31 @@ func HashPassword(password string) string {
 	}
 
 	return string(passwordHash)
+}
+
+func GenerateSecureToken() (string, string, error) {
+	bytes := make([]byte, 32)
+	if _, err := rand.Read(bytes); err != nil {
+		return "", "", err
+	}
+	rawToken := hex.EncodeToString(bytes)
+
+	hash := sha256.Sum256([]byte(rawToken))
+	tokenHash := hex.EncodeToString(hash[:])
+
+	return rawToken, tokenHash, nil
+}
+
+func VerifyToken(rawToken string, storedTokenHash string) bool {
+	hash := sha256.Sum256([]byte(rawToken))
+	computedHash := hex.EncodeToString(hash[:])
+
+	return subtle.ConstantTimeCompare([]byte(computedHash), []byte(storedTokenHash)) == 1
+}
+
+func HashToken(token string) string {
+	hash := sha256.Sum256([]byte(token))
+	tokenHash := hex.EncodeToString(hash[:])
+
+	return tokenHash
 }

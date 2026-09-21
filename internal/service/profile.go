@@ -101,7 +101,7 @@ func (s *UserService) CreateProfile(ctx context.Context, req *pb.CreateProfileRe
 	name += " " + req.GetPayload().GetLastName()
 
 	_, err = s.email.SendEmail(ctx, &pbEmail.SendEmailRequest{
-		Module:         "REGISTER_EMAIL",
+		Module:         "WELCOME_EMAIL",
 		RequestContext: req.RequestContext,
 		Email: &pbEmail.Email{
 			Recipient: req.GetPayload().GetEmail(),

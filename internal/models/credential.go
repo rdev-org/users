@@ -2,6 +2,7 @@ package models
 
 import (
 	"context"
+	"time"
 	"uuid"
 
 	"github.com/rdev-org/users/internal/shared"
@@ -18,6 +19,15 @@ type Credential struct {
 	IsVerified   bool   `json:"is_verified"`
 
 	Profile *Profile `bun:"rel:has-one,join:uuid=user_id" json:"profile"`
+}
+
+type RequestRegistration struct {
+	bun.BaseModel `bun:"table:pending_registration,alias:pr"`
+
+	Email     string    `json:"email"`
+	TokenHash string    `json:"token_hash"`
+	ExpiresAt time.Time `json:"expires_at"`
+	CreatedAt time.Time `json:"created_at"`
 }
 
 func (u *Credential) BeforeAppendModel(ctx context.Context, query bun.Query) error {

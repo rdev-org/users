@@ -4,9 +4,11 @@ import (
 	"context"
 	"fmt"
 	"log"
+	"time"
 
 	"github.com/rdev-org/users/internal/constant"
 	"github.com/rdev-org/users/internal/jwt"
+	"github.com/rdev-org/users/internal/models"
 	"golang.org/x/crypto/bcrypt"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
@@ -75,14 +77,37 @@ func (s *CredentialService) Login(ctx context.Context, req *pb.LoginRequest) (*p
 }
 
 func (s *CredentialService) Register(ctx context.Context, req *pb.RegisterRequest) (*pb.RegisterResponse, error) {
-	passwordHash := jwt.HashPassword(req.GetPassword())
-	payload := &RegisterRequest{
-		Email:    req.GetEmail(),
-		Password: passwordHash,
+	rawToken, tokenHash, err := jwt.GenerateSecureToken()
+	if err != nil {
+		return nil, fmt.Errorf("failed to generate secure registration token: %w", err)
 	}
 
-	if _, err := s.r.Register(ctx, payload); err != nil {
+	payload := &models.RequestRegistration{
+		Email:     req.GetEmail(),
+		TokenHash: tokenHash,
+		ExpiresAt: time.Now().Add(15 * time.Minute),
+		CreatedAt: time.Now(),
+	}
+
+	if err := s.r.RequestRegistration(ctx, payload); err != nil {
 		log.Printf("[Credential]service - failed to register %v", err)
+		return nil, status.Error(codes.Internal, err.Error())
+	}
+
+	_, err = s.email.SendEmail(ctx, &pbEmail.SendEmailRequest{
+		Module:         "REGISTER_EMAIL",
+		RequestContext: req.RequestContext,
+		Email: &pbEmail.Email{
+			Recipient: req.GetEmail(),
+			Subject:   fmt.Sprintf("Complete your registration for %s", req.GetEmail()),
+			Meta: map[string]string{
+				"Token": rawToken,
+			},
+		},
+	})
+
+	if err != nil {
+		log.Printf("[Credential]service - failed to send email register %v", err)
 		return nil, status.Error(codes.Internal, err.Error())
 	}
 

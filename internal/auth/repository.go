@@ -13,6 +13,7 @@ type CredentialRepository interface {
 	DeleteCredential(ctx context.Context, uuid string) error
 	UpdatePassword(ctx context.Context, req *UpdatePasswordRequest) error
 	CheckEmail(ctx context.Context, identifier string) (bool, error)
+	RequestRegistration(ctx context.Context, req *models.RequestRegistration) error
 }
 
 type Repository struct {
@@ -76,6 +77,14 @@ func (r *Repository) UpdatePassword(ctx context.Context, req *UpdatePasswordRequ
 		Model((*models.Credential)(nil)).
 		Set("password_hash = ?", req.Password).
 		Where("uuid = ?", req.Uuid).
+		Exec(ctx)
+
+	return err
+}
+
+func (r *Repository) RequestRegistration(ctx context.Context, req *models.RequestRegistration) error {
+	_, err := r.db.NewInsert().
+		Model(req).
 		Exec(ctx)
 
 	return err

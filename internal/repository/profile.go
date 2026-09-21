@@ -2,8 +2,10 @@ package repository
 
 import (
 	"context"
+	"time"
 
 	"github.com/rdev-org/users/internal/dto"
+	"github.com/rdev-org/users/internal/jwt"
 	"github.com/rdev-org/users/internal/models"
 	"github.com/rdev-org/users/internal/shared"
 	"github.com/uptrace/bun"
@@ -92,8 +94,24 @@ func (r *profileRepo) ListProfile(ctx context.Context, f *shared.Filter) ([]*mod
 }
 
 func (r *profileRepo) CreateProfile(ctx context.Context, req *dto.ProfileRequestDTO) (string, error) {
+	var pendingRegistration = new(models.RequestRegistration)
+
+	err := r.db.NewSelect().
+		Model(pendingRegistration).
+		Where("token_hash = ?", jwt.HashToken(req.Token)).
+		Where("expires_at > ?", time.Now()).
+		Scan(ctx)
+	if err != nil {
+		return "", err
+	}
+
+	credential := &models.Credential{
+		Username:     req.Username,
+		Email:        pendingRegistration.Email,
+		PasswordHash: req.Password,
+	}
+
 	profile := &models.Profile{
-		UserID:       req.UserID,
 		FirstName:    req.FirstName,
 		MiddleName:   req.MiddleName,
 		LastName:     req.LastName,
@@ -103,8 +121,17 @@ func (r *profileRepo) CreateProfile(ctx context.Context, req *dto.ProfileRequest
 		Avatar:       req.Avatar,
 	}
 
-	err := r.db.RunInTx(ctx, nil, func(ctx context.Context, tx bun.Tx) error {
+	err = r.db.RunInTx(ctx, nil, func(ctx context.Context, tx bun.Tx) error {
 		err := tx.NewInsert().
+			Model(credential).
+			Returning("uuid").
+			Scan(ctx)
+		if err != nil {
+			return err
+		}
+
+		profile.UserID = credential.Uuid
+		err = tx.NewInsert().
 			Model(profile).
 			Returning("uuid").
 			Scan(ctx)
@@ -115,7 +142,7 @@ func (r *profileRepo) CreateProfile(ctx context.Context, req *dto.ProfileRequest
 
 		if req.Address != nil {
 			address := &models.Address{
-				UserID:        req.UserID,
+				UserID:        credential.Uuid,
 				AddressLine1:  req.Address.AddressLine1,
 				AddressLine2:  req.Address.AddressLine2,
 				City:          req.Address.City,

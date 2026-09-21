@@ -13,4 +13,4 @@ CREATE TABLE
   );
 
 -- Index for fast lookups by UUID
-CREATE INDEX idx_uuser_credential_uuid ON user_credential (uuid);
+CREATE INDEX idx_user_credential_uuid ON user_credential (uuid);

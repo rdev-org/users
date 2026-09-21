@@ -12,6 +12,7 @@ import (
 
 	"github.com/rdev-org/helpers/structutil"
 	"github.com/rdev-org/users/internal/dto"
+	"github.com/rdev-org/users/internal/jwt"
 	"github.com/rdev-org/users/internal/shared"
 	"github.com/uptrace/bun"
 )
@@ -103,7 +104,6 @@ func ProtoToCreateProfile(proto *pb.CreateProfileRequest) (*dto.ProfileRequestDT
 
 	reqProfile := proto.GetPayload()
 	payload := &dto.ProfileRequestDTO{
-		UserID:       reqProfile.GetUserId(),
 		FirstName:    reqProfile.GetFirstName(),
 		MiddleName:   reqProfile.GetMiddleName(),
 		LastName:     reqProfile.GetLastName(),
@@ -112,6 +112,10 @@ func ProtoToCreateProfile(proto *pb.CreateProfileRequest) (*dto.ProfileRequestDT
 		Gender:       reqProfile.GetGender(),
 		Avatar:       reqProfile.GetAvatar(),
 		Address:      &dto.AddressRequestDTO{},
+
+		Token:    reqProfile.GetToken(),
+		Username: reqProfile.GetUsername(),
+		Password: jwt.HashPassword(reqProfile.GetPassword()),
 	}
 
 	if reqProfile.GetAddress() != nil {
