@@ -25,7 +25,7 @@ import (
 type Container struct {
 	db               *bun.DB
 	notificationConn *grpc.ClientConn
-	email            pbNotification.NotificationServiceClient
+	notification     pbNotification.NotificationServiceClient
 }
 
 func NewContainer(db *bun.DB) *Container {
@@ -68,7 +68,7 @@ func (c *Container) SetNotificationService(url string) error {
 	}
 
 	c.notificationConn = conn
-	c.email = pbNotification.NewNotificationServiceClient(conn)
+	c.notification = pbNotification.NewNotificationServiceClient(conn)
 	return nil
 }
 
@@ -77,13 +77,13 @@ func (c *Container) RegisterUserService(grpcServer *grpc.Server) {
 	addressRepo := repository.NewUserAddressRepository(c.db)
 	preferenceRepo := repository.NewUserPreferenceRepository(c.db)
 
-	s := service.NewUserService(c.email, profileRepo, addressRepo, preferenceRepo)
+	s := service.NewUserService(c.notification, profileRepo, addressRepo, preferenceRepo)
 	pb.RegisterUserServiceServer(grpcServer, s)
 }
 
 func (c *Container) RegisterUserCredentialService(grpcServer *grpc.Server) {
 	r := auth.NewAuthenticationRepository(c.db)
-	s := auth.NewAuthenticationService(c.email, r)
+	s := auth.NewAuthenticationService(c.notification, r)
 
 	pbAuth.RegisterAuthenticationServiceServer(grpcServer, s)
 }
