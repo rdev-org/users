@@ -112,10 +112,18 @@ func ProtoToCreateProfile(proto *pb.CreateProfileRequest) (*dto.ProfileRequestDT
 		Gender:       reqProfile.GetGender(),
 		Avatar:       reqProfile.GetAvatar(),
 		Address:      &dto.AddressRequestDTO{},
+	}
 
-		Token:    reqProfile.GetToken(),
-		Username: reqProfile.GetUsername(),
-		Password: jwt.HashPassword(reqProfile.GetPassword()),
+	if reqProfile.GetToken() != "" {
+		payload.Token = reqProfile.GetToken()
+	}
+
+	if reqProfile.GetUsername() != "" {
+		payload.Username = reqProfile.GetUsername()
+	}
+
+	if reqProfile.GetPassword() != "" {
+		payload.Password = jwt.HashPassword(reqProfile.GetPassword())
 	}
 
 	if reqProfile.GetAddress() != nil {
