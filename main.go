@@ -21,7 +21,7 @@ func main() {
 		log.Fatalf("failed to set notification service: %v", err)
 	}
 
-	grpcServer := c.Initialize()
+	grpcServer := c.Initialize(app.NewGRPCServer())
 
 	srvCfg := app.ServerConfig{
 		Name: "User",
